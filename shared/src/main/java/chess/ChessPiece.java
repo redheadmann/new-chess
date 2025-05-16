@@ -1,6 +1,10 @@
 package chess;
 
+import calculators.*;
+
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Objects;
 
 /**
  * Represents a single chess piece
@@ -10,8 +14,19 @@ import java.util.Collection;
  */
 public class ChessPiece {
 
-    public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type) {
+    private final ChessGame.TeamColor pieceColor;
+    private final PieceType type; //might need to be mutable
+
+    public ChessPiece(ChessGame.TeamColor pieceColor, PieceType type) {
+        this.pieceColor = pieceColor; //should be one of the enum ChessGame.TeamColor
+        this.type = type;
     }
+
+    public ChessPiece(ChessPiece original) {
+        this.pieceColor = original.pieceColor;
+        this.type = original.type;
+    }
+
 
     /**
      * The various different chess piece options
@@ -25,18 +40,53 @@ public class ChessPiece {
         PAWN
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {return true;}
+        if (o == null || getClass() != o.getClass()) {return false;}
+        ChessPiece that = (ChessPiece) o;
+        return pieceColor == that.pieceColor && type == that.type;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(pieceColor, type);
+    }
+
     /**
      * @return Which team this chess piece belongs to
      */
     public ChessGame.TeamColor getTeamColor() {
-        throw new RuntimeException("Not implemented");
+        return pieceColor;
     }
 
     /**
      * @return which type of chess piece this piece is
      */
     public PieceType getPieceType() {
-        throw new RuntimeException("Not implemented");
+        return type;
+    }
+
+    @Override
+    public String toString() {
+        HashMap<PieceType, String> map = new HashMap<>();
+        map.put(PieceType.KING, "K");
+        map.put(PieceType.QUEEN, "Q");
+        map.put(PieceType.ROOK, "R");
+        map.put(PieceType.KNIGHT, "N");
+        map.put(PieceType.BISHOP, "B");
+        map.put(PieceType.PAWN, "P");
+
+        ChessGame.TeamColor color = this.getTeamColor();
+        PieceType type = this.getPieceType();
+
+        if (color == ChessGame.TeamColor.BLACK) {
+            return map.get(type).toLowerCase();
+        } else {
+            return map.get(type);
+        }
+
+
     }
 
     /**
@@ -47,6 +97,17 @@ public class ChessPiece {
      * @return Collection of valid moves
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
-        throw new RuntimeException("Not implemented");
+        PieceType type = this.type;
+        PieceMovesCalculator movesCalculator = switch (type) {
+            case KING -> new KingMovesCalculator();
+            case QUEEN -> new QueenMovesCalculator();
+            case BISHOP -> new BishopMovesCalculator();
+            case KNIGHT -> new KnightMovesCalculator();
+            case ROOK -> new RookMovesCalculator();
+            case PAWN -> new PawnMovesCalculator();
+        };
+
+        return movesCalculator.pieceMoves(board, myPosition);
     }
 }
+
