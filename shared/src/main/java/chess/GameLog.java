@@ -22,8 +22,12 @@ public class GameLog {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         GameLog gameLog = (GameLog) o;
         return Objects.equals(moves, gameLog.moves);
     }

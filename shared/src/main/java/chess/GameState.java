@@ -52,8 +52,12 @@ public class GameState {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         GameState gameState = (GameState) o;
         return teamTurn == gameState.teamTurn;
     }
