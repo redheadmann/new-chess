@@ -26,7 +26,7 @@ public class JoinHandler extends Handler {
             String authToken = req.headers("authorization");
             Boolean valid = this.validateAuthToken(authToken);
             if (!valid) { // Ensure authToken is valid
-                res.status(401); // TODO: can use handler inherited method to set status code
+                res.status(401);
                 GameService.JoinResult result = new GameService.JoinResult("Error: unauthorized");
                 return serializer.toJson(result);
             }

@@ -7,7 +7,7 @@ import java.util.HashMap;
 public class MemoryUserDAO implements UserDAO {
 
     // while we have no actual database, use linked lists in memory
-    private HashMap<String, UserData> data = new HashMap<>();
+    final private HashMap<String, UserData> data = new HashMap<>();
 
     @Override
     public void createUser(UserData userData) throws DataAccessException {
