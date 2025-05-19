@@ -12,9 +12,16 @@ public class Server {
         Spark.staticFiles.location("web");
 
         // Instantiate Data Access Objects here so all service methods act on the same database
-        GameDAO gameDAO = new MemoryGameDAO();
-        UserDAO userDAO = new MemoryUserDAO();
-        AuthDAO authDAO = new MemoryAuthDAO();
+        GameDAO gameDAO;
+        UserDAO userDAO;
+        AuthDAO authDAO;
+        try {
+            gameDAO = new SqlGameDAO();
+            userDAO = new SqlUserDAO();
+            authDAO = new SqlAuthDAO();
+        } catch (DataAccessException e) {
+            throw new RuntimeException(e);
+        }
 
         // Register your endpoints and handle exceptions here.
         Spark.delete("/db", (req, res) ->
