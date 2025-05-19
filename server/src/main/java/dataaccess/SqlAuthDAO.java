@@ -6,7 +6,6 @@ import com.google.gson.Gson;
 import java.sql.SQLException;
 import java.util.UUID;
 
-import static java.sql.Statement.RETURN_GENERATED_KEYS;
 import static java.sql.Types.NULL;
 
 public class SqlAuthDAO implements AuthDAO {
