@@ -39,14 +39,14 @@ public class SqlUserDAO implements UserDAO {
 
     @Override
     public UserData getUser(String username) {
-        String statement = "SELECT authData FROM auth WHERE username=?";
+        String statement = "SELECT userData FROM user WHERE username=?";
         try (var conn = DatabaseManager.getConnection()) {
             try (var ps = conn.prepareStatement(statement)) {
                 ps.setString(1, username);
                 var rs = ps.executeQuery();
                 // If we have a match, then return it. Otherwise, return null
                 if (rs.next()) {
-                    String json = rs.getString("authData");
+                    String json = rs.getString("userData");
                     return (UserData) new Gson().fromJson(json, UserData.class);
                 } else {
                     return null;

@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import model.GameData;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -64,8 +65,7 @@ public class SqlGameDAO implements GameDAO {
                 // If the query result is empty, break from the loop
                 if (rs.next()) {
                     String json = rs.getString("gameData");
-                    GameData gameData = (GameData) new Gson.fromJson(json, GameData.class);
-                    return gameData;
+                    return (GameData) new Gson().fromJson(json, GameData.class);
                 } else {
                     // The game does not exist
                     throw new DataAccessException("Error: bad request");
@@ -78,12 +78,54 @@ public class SqlGameDAO implements GameDAO {
 
     @Override
     public List<GameData> listGames() {
-        return List.of();
+        //Build a list
+        ArrayList<GameData> gameList = new ArrayList<>();
+        // Add GameData objects from the table
+        String statement = "SELECT gameData FROM game";
+        try (var conn = DatabaseManager.getConnection()) {
+            try (var ps = conn.prepareStatement(statement)) {
+                var rs = ps.executeQuery();
+                // If the query result is empty, break from the loop
+                while (rs.next()) {
+                    String json = rs.getString("gameData");
+                    GameData gameData = new Gson().fromJson(json, GameData.class);
+                    gameList.add(gameData);
+                }
+            }
+        } catch (SQLException | DataAccessException e) {
+            throw new RuntimeException(String.format("unable to update database: %s, %s", statement, e.getMessage()));
+        }
+        return gameList;
     }
 
     @Override
     public void updateGame(String username, ChessGame.TeamColor playerColor, int gameID) throws DataAccessException {
+        // Copy old game data
+        GameData oldGame = this.getGame(gameID);
 
+        // update correct username based on player color, ensuring name is not taken
+        String newWhiteUsername;
+        String newBlackUsername;
+        if (playerColor == ChessGame.TeamColor.WHITE) {
+            if (oldGame.whiteUsername() != null) {
+                throw new DataAccessException("Error: already taken");
+            }
+            newWhiteUsername = username;
+            newBlackUsername = oldGame.blackUsername();
+        } else {
+            if (oldGame.blackUsername() != null) {
+                throw new DataAccessException("Error: already taken");
+            }
+            newWhiteUsername = oldGame.whiteUsername();
+            newBlackUsername = username;
+        }
+
+        // create new GameData model and insert in old position
+        GameData newGame = new GameData(oldGame.gameID(), newWhiteUsername, newBlackUsername,
+                oldGame.gameName(), oldGame.game());
+        // Insert into database
+        String statement = "INSERT INTO game (gameID, gameData) VALUES (?,?)";
+        executeUpdate(statement, gameID, newGame);
     }
 
     @Override
