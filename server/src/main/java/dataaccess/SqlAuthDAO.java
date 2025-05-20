@@ -120,7 +120,7 @@ public class SqlAuthDAO implements AuthDAO {
               `authToken` varchar(256) NOT NULL,
               `authData` longtext DEFAULT NULL,
               PRIMARY KEY (`authToken`),
-              INDEX(authToken),
+              INDEX(authToken)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
             """
     };

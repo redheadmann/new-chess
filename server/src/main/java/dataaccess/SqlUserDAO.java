@@ -97,7 +97,7 @@ public class SqlUserDAO implements UserDAO {
               `username` varchar(256) NOT NULL,
               `userData` longtext DEFAULT NULL,
               PRIMARY KEY (`username`),
-              INDEX(username),
+              INDEX(username)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
             """
     };
