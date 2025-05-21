@@ -2,6 +2,7 @@ package dataaccess;
 
 import com.google.gson.Gson;
 import model.UserData;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.SQLException;
 
@@ -14,8 +15,13 @@ public class SqlUserDAO implements UserDAO {
 
     @Override
     public void createUser(UserData userData) throws DataAccessException {
+        //Hash password in advance
+        String clearTextPassword = userData.password();
+        String hashedPassword = BCrypt.hashpw(clearTextPassword, BCrypt.gensalt());
+        UserData newUserData = new UserData(userData.username(), hashedPassword, userData.email());
+
         // Check if username is taken
-        String username = userData.username();
+        String username = newUserData.username();
         String statement = "SELECT userData FROM user WHERE username=?";
         try (var conn = DatabaseManager.getConnection()) {
             try (var ps = conn.prepareStatement(statement)) {
@@ -27,7 +33,7 @@ public class SqlUserDAO implements UserDAO {
                 } else {
                     // Otherwise, we can add a new username to our table
                     statement = "INSERT INTO user (username, userData) VALUES (?,?)";
-                    String userDataString = new Gson().toJson(userData);
+                    String userDataString = new Gson().toJson(newUserData);
                     executeUpdate(statement, username, userDataString);
                 }
             }
@@ -55,6 +61,31 @@ public class SqlUserDAO implements UserDAO {
         } catch (SQLException | DataAccessException e) {
             throw new RuntimeException(String.format("unable to update database: %s, %s", statement, e.getMessage()));
         }
+    }
+
+    public boolean verifyPassword(String username, String clearTextPassword) {
+        // Read the hashed password from the database
+        String hashedPassword;
+        String statement = "SELECT userData FROM user WHERE username=?";
+        try (var conn = DatabaseManager.getConnection()) {
+            try (var ps = conn.prepareStatement(statement)) {
+                ps.setString(1, username);
+                var rs = ps.executeQuery();
+                // If we have a match, then return it. Otherwise, return null
+                if (rs.next()) {
+                    String json = rs.getString("userData");
+                    UserData userData = new Gson().fromJson(json, UserData.class);
+                    hashedPassword = userData.password();
+                } else {
+                    throw new RuntimeException("Error: verifyPassword was called for a user which doesn't " +
+                            "exist in the database");
+                }
+            }
+        } catch (SQLException | DataAccessException e) {
+            throw new RuntimeException(String.format("unable to update database: %s, %s", statement, e.getMessage()));
+        }
+        // Check the password
+        return BCrypt.checkpw(clearTextPassword, hashedPassword);
     }
 
 

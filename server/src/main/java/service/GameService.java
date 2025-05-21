@@ -46,7 +46,7 @@ public class GameService {
         GameData newGame;
         // overkill, but catch the exception for if too many games already exist
         try {
-            newGame = gameDAO.createGame(gameName);
+            newGame = gameDAO.createGame(gameName); // return a failed result instead
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
         }

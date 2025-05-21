@@ -6,4 +6,5 @@ public interface UserDAO {
     void createUser(UserData userData) throws DataAccessException;
     UserData getUser(String username);
     void clear();
+    boolean verifyPassword(String username, String clearTextPassword);
 }

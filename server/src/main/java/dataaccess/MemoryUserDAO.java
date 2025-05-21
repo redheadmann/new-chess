@@ -27,4 +27,12 @@ public class MemoryUserDAO implements UserDAO {
     public void clear() {
         data.clear();
     }
+
+    @Override
+    public boolean verifyPassword(String username, String clearTextPassword) {
+        // Get user and extract password
+        String storedPassword = this.getUser(username).password();
+        boolean res = storedPassword == clearTextPassword;
+        return res;
+    }
 }

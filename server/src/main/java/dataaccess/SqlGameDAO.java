@@ -57,7 +57,7 @@ public class SqlGameDAO implements GameDAO {
     @Override
     public GameData getGame(int gameID) throws DataAccessException {
         // Check for gameID in the database
-        String statement = "SELECT gameID FROM game WHERE gameID=?";
+        String statement = "SELECT gameData FROM game WHERE gameID=?";
         try (var conn = DatabaseManager.getConnection()) {
             try (var ps = conn.prepareStatement(statement)) {
                 ps.setInt(1, gameID);
@@ -124,8 +124,8 @@ public class SqlGameDAO implements GameDAO {
         GameData newGame = new GameData(oldGame.gameID(), newWhiteUsername, newBlackUsername,
                 oldGame.gameName(), oldGame.game());
         // Insert into database
-        String statement = "INSERT INTO game (gameID, gameData) VALUES (?,?)";
-        executeUpdate(statement, gameID, newGame);
+        String statement = "UPDATE game SET gameData=? WHERE gameID=?";
+        executeUpdate(statement, newGame, gameID);
     }
 
     @Override
@@ -149,6 +149,10 @@ public class SqlGameDAO implements GameDAO {
                     }
                     else if (param instanceof Integer p) {
                         ps.setInt(i + 1, p);
+                    }
+                    else if (param instanceof GameData p) {
+                        String json = new Gson().toJson(p);
+                        ps.setString(i + 1, json);
                     }
                     else if (param == null) {
                         ps.setNull(i + 1, NULL);

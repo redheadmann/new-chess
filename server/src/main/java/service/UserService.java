@@ -70,7 +70,7 @@ public class UserService {
             return new LoginResult(null, null, "Error: unauthorized");
         }
         // 2. verify password
-        if (!Objects.equals(userData.password(), password)) { // wrong password
+        if (!userDAO.verifyPassword(username, password)) { // wrong password
             return new LoginResult(null, null, "Error: unauthorized");
         }
         // 3. create auth
