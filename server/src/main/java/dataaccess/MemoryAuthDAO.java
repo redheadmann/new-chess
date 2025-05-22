@@ -11,7 +11,7 @@ public class MemoryAuthDAO implements AuthDAO {
 
 
     @Override
-    public AuthData createAuth(String username) {
+    public AuthData createAuth(String username) throws DataAccessException {
         String authToken = UUID.randomUUID().toString();
         AuthData authData = new AuthData(username, authToken);
         data.put(authToken, authData);
@@ -32,12 +32,12 @@ public class MemoryAuthDAO implements AuthDAO {
     public void deleteAuth(String authToken) throws DataAccessException {
         AuthData removed = data.remove(authToken);
         if (removed == null) {
-            throw new DataAccessException("authToken is not in database");
+            throw new DataAccessException("Error: unauthorized");
         }
     }
 
     @Override
-    public void clear() {
+    public void clear() throws DataAccessException {
         data.clear();
     }
 

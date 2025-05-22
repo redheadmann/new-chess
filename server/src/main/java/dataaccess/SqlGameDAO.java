@@ -24,7 +24,7 @@ public class SqlGameDAO implements GameDAO {
         int gameID = 1234;
         for (int i=0; i < 101; i++) {
             if (i == 100) {
-                throw new DataAccessException("Cannot create game, too many games on server");
+                throw new DataAccessException("Error: cannot create game, too many games on server");
             }
 
             // Check for gameID in the database. End the loop when our ID is unique
@@ -39,7 +39,7 @@ public class SqlGameDAO implements GameDAO {
                     }
                 }
             } catch (SQLException e) {
-                throw new DataAccessException(String.format("unable to update database: %s, %s", statement, e.getMessage()));
+                throw new DataAccessException(String.format("Error: unable to update database: %s, %s", statement, e.getMessage()));
             }
             // Update gameID
             gameID = 1000 + random.nextInt(9000);
@@ -72,12 +72,12 @@ public class SqlGameDAO implements GameDAO {
                 }
             }
         } catch (SQLException e) {
-            throw new DataAccessException(String.format("unable to update database: %s, %s", statement, e.getMessage()));
+            throw new DataAccessException(String.format("Error: unable to update database: %s, %s", statement, e.getMessage()));
         }
     }
 
     @Override
-    public List<GameData> listGames() {
+    public List<GameData> listGames() throws DataAccessException {
         //Build a list
         ArrayList<GameData> gameList = new ArrayList<>();
         // Add GameData objects from the table
@@ -93,7 +93,7 @@ public class SqlGameDAO implements GameDAO {
                 }
             }
         } catch (SQLException | DataAccessException e) {
-            throw new RuntimeException(String.format("unable to update database: %s, %s", statement, e.getMessage()));
+            throw new DataAccessException(String.format("Error: unable to update database: %s, %s", statement, e.getMessage()));
         }
         return gameList;
     }
@@ -129,13 +129,13 @@ public class SqlGameDAO implements GameDAO {
     }
 
     @Override
-    public void clear() {
+    public void clear() throws DataAccessException {
         // Clear the entire table with TRUNCATE
         String statement = "TRUNCATE TABLE game";
         try {
             executeUpdate(statement);
         } catch (DataAccessException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException("Error clearing database: ", e);
         }
     }
 
@@ -161,7 +161,7 @@ public class SqlGameDAO implements GameDAO {
                 ps.executeUpdate();
             }
         } catch (SQLException e) {
-            throw new DataAccessException(String.format("unable to update database: %s, %s", statement, e.getMessage()));
+            throw new DataAccessException(String.format("Error: unable to update database: %s, %s", statement, e.getMessage()));
         }
     }
 
@@ -185,7 +185,7 @@ public class SqlGameDAO implements GameDAO {
                 }
             }
         } catch (SQLException ex) {
-            throw new DataAccessException(String.format("Unable to configure database: %s", ex.getMessage()));
+            throw new DataAccessException(String.format("Error: unable to configure database: %s", ex.getMessage()));
         }
     }
 }

@@ -14,7 +14,7 @@ public class SqlAuthDAO implements AuthDAO {
     }
 
     @Override
-    public AuthData createAuth(String username) {
+    public AuthData createAuth(String username) throws DataAccessException {
         // Create data, including random authToken
         String authToken = UUID.randomUUID().toString();
         AuthData authData = new AuthData(username, authToken);
@@ -27,7 +27,7 @@ public class SqlAuthDAO implements AuthDAO {
         try {
             executeUpdate(statement, authToken, serializedData);
         } catch (DataAccessException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException("Error creating authorization: ",e);
         }
 
         return authData;
@@ -53,7 +53,7 @@ public class SqlAuthDAO implements AuthDAO {
                         }
                         authData = new Gson().fromJson(serializedData, AuthData.class);
                     } else {
-                        throw new DataAccessException("Cannot getAuth: authToken is not in database");
+                        throw new DataAccessException("Error: unauthorized");
                     }
                 }
             }
@@ -73,22 +73,22 @@ public class SqlAuthDAO implements AuthDAO {
                 ps.setString(1, authToken);
                 int rowsAffected = ps.executeUpdate();
                 if (!(rowsAffected == 1)) {
-                    throw new DataAccessException("Cannot getAuth: authToken is not in database");
+                    throw new DataAccessException("Error: unauthorized");
                 }
             }
         } catch (SQLException e) {
-            throw new DataAccessException(String.format("unable to update database: %s, %s", statement, e.getMessage()));
+            throw new DataAccessException(String.format("Error: unable to update database: %s, %s", statement, e.getMessage()));
         }
     }
 
     @Override
-    public void clear() {
+    public void clear() throws DataAccessException {
         // Clear the entire table with TRUNCATE
         String statement = "TRUNCATE TABLE auth";
         try {
             executeUpdate(statement);
         } catch (DataAccessException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException("Error clearing database: ",e);
         }
     }
 
@@ -110,7 +110,7 @@ public class SqlAuthDAO implements AuthDAO {
                 ps.executeUpdate();
             }
         } catch (SQLException e) {
-            throw new DataAccessException(String.format("unable to update database: %s, %s", statement, e.getMessage()));
+            throw new DataAccessException(String.format("Error: unable to update database: %s, %s", statement, e.getMessage()));
         }
     }
 
@@ -134,7 +134,7 @@ public class SqlAuthDAO implements AuthDAO {
                 }
             }
         } catch (SQLException ex) {
-            throw new DataAccessException(String.format("Unable to configure database: %s", ex.getMessage()));
+            throw new DataAccessException(String.format("Error: unable to configure database: %s", ex.getMessage()));
         }
     }
 }

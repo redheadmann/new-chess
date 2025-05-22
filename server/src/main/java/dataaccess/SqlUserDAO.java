@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import model.UserData;
 import org.mindrot.jbcrypt.BCrypt;
 
+import javax.xml.crypto.Data;
 import java.sql.SQLException;
 
 import static java.sql.Types.NULL;
@@ -29,7 +30,7 @@ public class SqlUserDAO implements UserDAO {
                 var rs = ps.executeQuery();
                 // If we have a match, then throw an error
                 if (rs.next()) {
-                    throw new DataAccessException("username already taken");
+                    throw new DataAccessException("Error: already taken");
                 } else {
                     // Otherwise, we can add a new username to our table
                     statement = "INSERT INTO user (username, userData) VALUES (?,?)";
@@ -38,13 +39,13 @@ public class SqlUserDAO implements UserDAO {
                 }
             }
         } catch (SQLException e) {
-            throw new DataAccessException(String.format("unable to update database: %s, %s", statement, e.getMessage()));
+            throw new DataAccessException(String.format("Error: unable to update database: %s, %s", statement, e.getMessage()));
         }
     }
 
 
     @Override
-    public UserData getUser(String username) {
+    public UserData getUser(String username) throws DataAccessException {
         String statement = "SELECT userData FROM user WHERE username=?";
         try (var conn = DatabaseManager.getConnection()) {
             try (var ps = conn.prepareStatement(statement)) {
@@ -53,17 +54,17 @@ public class SqlUserDAO implements UserDAO {
                 // If we have a match, then return it. Otherwise, return null
                 if (rs.next()) {
                     String json = rs.getString("userData");
-                    return (UserData) new Gson().fromJson(json, UserData.class);
+                    return new Gson().fromJson(json, UserData.class);
                 } else {
                     return null;
                 }
             }
         } catch (SQLException | DataAccessException e) {
-            throw new RuntimeException(String.format("unable to update database: %s, %s", statement, e.getMessage()));
+            throw new DataAccessException(String.format("Error: unable to update database: %s, %s", statement, e.getMessage()));
         }
     }
 
-    public boolean verifyPassword(String username, String clearTextPassword) {
+    public boolean verifyPassword(String username, String clearTextPassword) throws DataAccessException {
         // Read the hashed password from the database
         String hashedPassword;
         String statement = "SELECT userData FROM user WHERE username=?";
@@ -82,7 +83,7 @@ public class SqlUserDAO implements UserDAO {
                 }
             }
         } catch (SQLException | DataAccessException e) {
-            throw new RuntimeException(String.format("unable to update database: %s, %s", statement, e.getMessage()));
+            throw new DataAccessException(String.format("Error: unable to update database: %s, %s", statement, e.getMessage()));
         }
         // Check the password
         return BCrypt.checkpw(clearTextPassword, hashedPassword);
@@ -90,7 +91,7 @@ public class SqlUserDAO implements UserDAO {
 
 
     @Override
-    public void clear() {
+    public void clear() throws DataAccessException {
         // Clear the entire table with TRUNCATE
         String statement = "TRUNCATE TABLE user";
         try {
@@ -118,7 +119,7 @@ public class SqlUserDAO implements UserDAO {
                 ps.executeUpdate();
             }
         } catch (SQLException e) {
-            throw new DataAccessException(String.format("unable to update database: %s, %s", statement, e.getMessage()));
+            throw new DataAccessException(String.format("Error: unable to update database: %s, %s", statement, e.getMessage()));
         }
     }
 
@@ -142,7 +143,7 @@ public class SqlUserDAO implements UserDAO {
                 }
             }
         } catch (SQLException ex) {
-            throw new DataAccessException(String.format("Unable to configure database: %s", ex.getMessage()));
+            throw new DataAccessException(String.format("Error: unable to configure database: %s", ex.getMessage()));
         }
     }
 }

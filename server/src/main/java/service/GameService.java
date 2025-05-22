@@ -20,7 +20,12 @@ public class GameService {
 
     public ListResult list() {
         // 1. list all games
-        List<GameData> games = gameDAO.listGames();
+        List<GameData> games;
+        try {
+            games = gameDAO.listGames();
+        } catch (DataAccessException e) {
+            return new ListResult(null, e.getMessage());
+        }
         // 2. convert list to ListResult
         List<ReducedGameData> resultList = new ArrayList<>();
         for (GameData game: games) {
@@ -44,13 +49,11 @@ public class GameService {
         }
 
         GameData newGame;
-        // overkill, but catch the exception for if too many games already exist
         try {
             newGame = gameDAO.createGame(gameName); // return a failed result instead
         } catch (DataAccessException e) {
-            throw new RuntimeException(e);
+            return new CreateResult(null, e.getMessage());
         }
-
 
         return new CreateResult(newGame.gameID(), null);
     }

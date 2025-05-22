@@ -2,7 +2,9 @@ package dataaccess;
 
 import model.UserData;
 
+import javax.xml.crypto.Data;
 import java.util.HashMap;
+import java.util.Objects;
 
 public class MemoryUserDAO implements UserDAO {
 
@@ -19,20 +21,19 @@ public class MemoryUserDAO implements UserDAO {
     }
 
     @Override
-    public UserData getUser(String username) {
+    public UserData getUser(String username) throws DataAccessException {
         return data.get(username);
     }
 
     @Override
-    public void clear() {
+    public void clear() throws DataAccessException {
         data.clear();
     }
 
     @Override
-    public boolean verifyPassword(String username, String clearTextPassword) {
+    public boolean verifyPassword(String username, String clearTextPassword) throws DataAccessException {
         // Get user and extract password
         String storedPassword = this.getUser(username).password();
-        boolean res = storedPassword == clearTextPassword;
-        return res;
+        return Objects.equals(storedPassword, clearTextPassword);
     }
 }

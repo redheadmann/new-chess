@@ -4,6 +4,8 @@ import dataaccess.DataAccessException;
 import service.Result;
 import spark.*;
 
+import java.util.Objects;
+
 abstract class Handler {
     private final AuthDAO authDAO;
 
@@ -15,13 +17,15 @@ abstract class Handler {
     public abstract Object handleRequest(Request req, Response res);
 
 
-    public Boolean validateAuthToken(String authToken) {
+    public Boolean validateAuthToken(String authToken) throws DataAccessException {
         try {
             authDAO.getAuth(authToken);
             return Boolean.TRUE;
-        }
-        catch (DataAccessException e) {
-            return Boolean.FALSE;
+        } catch (DataAccessException e) {
+            if (Objects.equals(e.getMessage(), "Error: unauthorized")) {
+                return Boolean.FALSE;
+            }
+            throw e;
         }
     }
 

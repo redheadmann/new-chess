@@ -6,8 +6,6 @@ import dataaccess.UserDAO;
 import model.AuthData;
 import model.UserData;
 
-import java.util.Objects;
-
 public class UserService {
     public AuthDAO authDAO;
     public UserDAO userDAO;
@@ -46,8 +44,7 @@ public class UserService {
 
             return new RegisterResult(authData.username(), authData.authToken(), null);
         } catch (DataAccessException e) {
-            String errorMessage = "Error: bad request";
-            return new RegisterResult(null, null, errorMessage);
+            return new RegisterResult(null, null, e.getMessage());
         }
     }
 
@@ -64,18 +61,22 @@ public class UserService {
             return new LoginResult(null, null, "Error: bad request");
         }
 
-        // 1. getUser
-        UserData userData = userDAO.getUser(username);
-        if (userData == null) { // user not in database
-            return new LoginResult(null, null, "Error: unauthorized");
+        try {
+            // 1. getUser
+            UserData userData = userDAO.getUser(username);
+            if (userData == null) { // user not in database
+                return new LoginResult(null, null, "Error: unauthorized");
+            }
+            // 2. verify password
+            if (!userDAO.verifyPassword(username, password)) { // wrong password
+                return new LoginResult(null, null, "Error: unauthorized");
+            }
+            // 3. create auth
+            AuthData authData = authDAO.createAuth(username);
+            return new LoginResult(authData.username(), authData.authToken(), null);
+        } catch (DataAccessException e) {
+            return new LoginResult(null, null, e.getMessage());
         }
-        // 2. verify password
-        if (!userDAO.verifyPassword(username, password)) { // wrong password
-            return new LoginResult(null, null, "Error: unauthorized");
-        }
-        // 3. create auth
-        AuthData authData = authDAO.createAuth(username);
-        return new LoginResult(authData.username(), authData.authToken(), null);
     }
 
     public record LogoutRequest(String authToken) {}
@@ -90,7 +91,7 @@ public class UserService {
             return new LogoutResult(null);
         }
         catch (DataAccessException e) {
-            return new LogoutResult("Error: unauthorized");
+            return new LogoutResult(e.getMessage());
         }
     }
 

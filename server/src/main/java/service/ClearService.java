@@ -1,6 +1,7 @@
 package service;
 
 import dataaccess.AuthDAO;
+import dataaccess.DataAccessException;
 import dataaccess.GameDAO;
 import dataaccess.UserDAO;
 
@@ -23,7 +24,7 @@ public class ClearService {
             userDAO.clear();
             authDAO.clear();
             return new ClearResult(null);
-        } catch (Error e) {
+        } catch (Error | DataAccessException e) {
             return new ClearResult("Error: " + e.getMessage());
         }
     }

@@ -40,7 +40,7 @@ public class MemoryGameDAO implements  GameDAO {
     }
 
     @Override
-    public List<GameData> listGames() {
+    public List<GameData> listGames() throws DataAccessException {
         return new ArrayList<>(data.values());
     }
 
@@ -74,7 +74,7 @@ public class MemoryGameDAO implements  GameDAO {
     }
 
     @Override
-    public void clear() {
+    public void clear() throws DataAccessException {
         data.clear();
     }
 }
