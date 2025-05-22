@@ -3,6 +3,8 @@ package dataaccess;
 import model.AuthData;
 
 import com.google.gson.Gson;
+
+import javax.xml.crypto.Data;
 import java.sql.SQLException;
 import java.util.UUID;
 
@@ -43,34 +45,45 @@ public class SqlAuthDAO extends SqlDAO implements AuthDAO {
         }
 
 
+    private String getSerializedAuthData(String authToken) throws SQLException, DataAccessException {
+        String statement = "SELECT authData FROM auth WHERE authToken=?";
+        try (var conn = DatabaseManager.getConnection();
+             var ps = conn.prepareStatement(statement)) {
+            ps.setString(1, authToken);
+            try (var rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    throw new DataAccessException("Error: unauthorized");
+                }
+                return rs.getString("authData");
+            }
+        }
+    }
+
+
     @Override
     public AuthData getAuth(String authToken) throws DataAccessException {
         String statement = "SELECT authData FROM auth WHERE authToken=?";
         AuthData authData;
         // Connect to the database and  extract a match for the given token
-        try (var conn = DatabaseManager.getConnection()) {
-            try (var ps = conn.prepareStatement(statement)) {
-                // Set the authToken in our table query statement
-                ps.setString(1, authToken);
-                try (var rs = ps.executeQuery()) {
-                    // If result is not null, process it. Otherwise, throw an exception
-                    if (rs.next()) {
-                        // Deserialize the authData object
-                        String serializedData = rs.getString("authData");
-                        if (serializedData == null) {
-                            throw new DataAccessException("authData is NULL in the database");
-                        }
-                        authData = new Gson().fromJson(serializedData, AuthData.class);
-                    } else {
-                        throw new DataAccessException("Error: unauthorized");
-                    }
+        try (var conn = DatabaseManager.getConnection();
+             var ps = conn.prepareStatement(statement)) {
+            // Set the authToken in our table query statement
+            ps.setString(1, authToken);
+            try (var rs = ps.executeQuery()) {
+                // If we don't find a matching authToken, throw unauthorized error
+                if (!rs.next()) {
+                    throw new DataAccessException("Error: unauthorized");
                 }
+                // Otherwise, deserialize the data, make sure it exists, and return
+                String serializedData = rs.getString("authData");
+                if (serializedData == null) {
+                    throw new DataAccessException("Error: authData is NULL in the database");
+                }
+                return new Gson().fromJson(serializedData, AuthData.class);
             }
         } catch (SQLException e) {
             throw new DataAccessException("Database error: " + e.getMessage(), e);
         }
-
-        return authData;
     }
 
     @Override

@@ -49,22 +49,10 @@ public class MemoryGameDAO implements  GameDAO {
         // copy old game data
         GameData oldGame = this.getGame(gameID);
 
-        // update correct username based on player color, ensuring name is not taken
-        String newWhiteUsername;
-        String newBlackUsername;
-        if (playerColor == ChessGame.TeamColor.WHITE) {
-            if (oldGame.whiteUsername() != null) {
-                throw new DataAccessException("Error: already taken");
-            }
-            newWhiteUsername = username;
-            newBlackUsername = oldGame.blackUsername();
-        } else {
-            if (oldGame.blackUsername() != null) {
-                throw new DataAccessException("Error: already taken");
-            }
-            newWhiteUsername = oldGame.whiteUsername();
-            newBlackUsername = username;
-        }
+        // Find new usernames
+        String[] names = calculateUsernames(username, playerColor, oldGame);
+        String newWhiteUsername = names[0];
+        String newBlackUsername = names[1];
 
         // create new GameData model and insert in old position
         GameData newGame = new GameData(oldGame.gameID(), newWhiteUsername, newBlackUsername,
