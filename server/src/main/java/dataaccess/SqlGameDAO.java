@@ -11,9 +11,19 @@ import java.util.Random;
 
 import static java.sql.Types.NULL;
 
-public class SqlGameDAO implements GameDAO {
+public class SqlGameDAO extends SqlDAO implements GameDAO {
     public SqlGameDAO() throws DataAccessException {
-        configureDatabase();
+        String[] createStatements = {
+                """
+            CREATE TABLE IF NOT EXISTS game (
+              `gameID` INT NOT NULL,
+              `gameData` longtext DEFAULT NULL,
+              PRIMARY KEY (`gameID`),
+              INDEX(gameID)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+            """
+        };
+        configureDatabase(createStatements);
     }
 
     @Override
@@ -47,9 +57,10 @@ public class SqlGameDAO implements GameDAO {
 
         // Create new game GameData object
         GameData game = new GameData(gameID, null, null, gameName, new ChessGame());
+        String gameJson = new Gson().toJson(game);
         // Insert into database
         String statement = "INSERT INTO game (gameID, gameData) VALUES (?,?)";
-        executeUpdate(statement, gameID, game);
+        executeUpdate(statement, gameID, gameJson);
         // Return the game object
         return game;
     }
@@ -120,12 +131,13 @@ public class SqlGameDAO implements GameDAO {
             newBlackUsername = username;
         }
 
-        // create new GameData model and insert in old position
+        // create new GameData model and serialize it
         GameData newGame = new GameData(oldGame.gameID(), newWhiteUsername, newBlackUsername,
                 oldGame.gameName(), oldGame.game());
+        String gameJson = new Gson().toJson(newGame);
         // Insert into database
         String statement = "UPDATE game SET gameData=? WHERE gameID=?";
-        executeUpdate(statement, newGame, gameID);
+        executeUpdate(statement, gameJson, gameID);
     }
 
     @Override
@@ -139,53 +151,4 @@ public class SqlGameDAO implements GameDAO {
         }
     }
 
-    private void executeUpdate(String statement, Object... params) throws DataAccessException {
-        try (var conn = DatabaseManager.getConnection()) {
-            try (var ps = conn.prepareStatement(statement)) {
-                for (var i = 0; i < params.length; i++) {
-                    var param = params[i];
-                    if (param instanceof String p) {
-                        ps.setString(i + 1, p);
-                    }
-                    else if (param instanceof Integer p) {
-                        ps.setInt(i + 1, p);
-                    }
-                    else if (param instanceof GameData p) {
-                        String json = new Gson().toJson(p);
-                        ps.setString(i + 1, json);
-                    }
-                    else if (param == null) {
-                        ps.setNull(i + 1, NULL);
-                    }
-                }
-                ps.executeUpdate();
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException(String.format("Error: unable to update database: %s, %s", statement, e.getMessage()));
-        }
-    }
-
-    private final String[] createStatements = {
-            """
-            CREATE TABLE IF NOT EXISTS game (
-              `gameID` INT NOT NULL,
-              `gameData` longtext DEFAULT NULL,
-              PRIMARY KEY (`gameID`),
-              INDEX(gameID)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-            """
-    };
-
-    private void configureDatabase() throws DataAccessException {
-        DatabaseManager.createDatabase(); // create database if it doesn't exist
-        try (var conn = DatabaseManager.getConnection()) {
-            for (var statement : createStatements) {
-                try (var preparedStatement = conn.prepareStatement(statement)) {
-                    preparedStatement.executeUpdate();
-                }
-            }
-        } catch (SQLException ex) {
-            throw new DataAccessException(String.format("Error: unable to configure database: %s", ex.getMessage()));
-        }
-    }
 }
