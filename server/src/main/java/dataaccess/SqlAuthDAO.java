@@ -45,21 +45,6 @@ public class SqlAuthDAO extends SqlDAO implements AuthDAO {
         }
 
 
-    private String getSerializedAuthData(String authToken) throws SQLException, DataAccessException {
-        String statement = "SELECT authData FROM auth WHERE authToken=?";
-        try (var conn = DatabaseManager.getConnection();
-             var ps = conn.prepareStatement(statement)) {
-            ps.setString(1, authToken);
-            try (var rs = ps.executeQuery()) {
-                if (!rs.next()) {
-                    throw new DataAccessException("Error: unauthorized");
-                }
-                return rs.getString("authData");
-            }
-        }
-    }
-
-
     @Override
     public AuthData getAuth(String authToken) throws DataAccessException {
         String statement = "SELECT authData FROM auth WHERE authToken=?";
