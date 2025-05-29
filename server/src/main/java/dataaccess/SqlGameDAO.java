@@ -123,6 +123,7 @@ public class SqlGameDAO extends SqlDAO implements GameDAO {
         GameData newGame = new GameData(oldGame.gameID(), newWhiteUsername, newBlackUsername,
                 oldGame.gameName(), oldGame.game());
         String gameJson = new Gson().toJson(newGame);
+
         // Insert into database
         String statement = "UPDATE game SET gameData=? WHERE gameID=?";
         executeUpdate(statement, gameJson, gameID);
