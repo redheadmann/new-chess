@@ -28,13 +28,26 @@ public class Repl {
             String line = scanner.nextLine();
 
             try {
-                result = client.eval(line);
-                System.out.print(BLUE + result);
+                switch (state) {
+                    case SIGNED_IN -> {
+                        result = PostLoginClient.eval(line);
+                        System.out.print(SET_TEXT_COLOR_BLUE + result);
+                    }
+                    case SIGNED_OUT -> {
+                        result = PreLoginClient.eval(line);
+                        System.out.print(SET_TEXT_COLOR_BLUE + result);
+                    }
+                    case IN_GAME -> {
+                        System.out.print("Not yet implemented");
+                    }
+                }
             } catch (Throwable e) {
                 var msg = e.toString();
                 System.out.print(msg);
             }
         }
+        // Implement proper steps for quiting, including logging out if logged in
+        //
         System.out.println();
     }
 
@@ -44,7 +57,12 @@ public class Repl {
     }
 
     private void printPrompt() {
-        System.out.print("\n" + RESET + ">>> " + GREEN);
+        String stateString = switch (state) {
+            case SIGNED_IN -> "LOGGED_IN";
+            case SIGNED_OUT -> "LOGGED_OUT";
+            case IN_GAME -> "IN_GAME";
+        };
+        System.out.print("\n" + SET_TEXT_COLOR_BLACK + RESET_BG_COLOR + "[" + stateString + "] >>> " + SET_TEXT_COLOR_GREEN);
     }
 
 }
