@@ -1,6 +1,7 @@
 package ui;
 
 import exception.ResponseException;
+import serverfacade.ServerFacade;
 
 import java.util.Arrays;
 
@@ -9,7 +10,10 @@ import static ui.EscapeSequences.SET_TEXT_COLOR_DARK_GREY;
 
 public class PostLoginClient {
 
+    private final ServerFacade server;
+
     public PostLoginClient(String serverUrl) {
+        server = new ServerFacade(serverUrl);
     }
 
     public String eval(String input) {
@@ -51,7 +55,7 @@ public class PostLoginClient {
         return "Not implemented";
     }
 
-
+/*
     public String adoptPet(String... params) throws ResponseException {
         if (params.length == 1) {
             try {
@@ -66,6 +70,7 @@ public class PostLoginClient {
         }
         throw new ResponseException(400, "Expected: <pet id>");
     }
+ */
 
 
     // Version of help message for post login
