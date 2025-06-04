@@ -4,9 +4,11 @@ import com.google.gson.Gson;
 import exception.ResponseException;
 import model.GameData;
 import service.UserService;
+import service.GameService;
 
 import java.io.*;
 import java.net.*;
+import java.util.List;
 
 public class ServerFacade {
 
@@ -19,33 +21,73 @@ public class ServerFacade {
 
     public void clear() throws ResponseException {
         var path = "/db";
-        this.makeRequest("DELETE", path, null, null);
+        this.makeRequest("DELETE", path, null, null, null);
     }
 
+
     public String[] registerUser(String username, String password, String email) throws ResponseException {
-        // Create special register request object
+        // Register request object
         UserService.RegisterRequest request = new UserService.RegisterRequest(username, password, email);
 
         var path = "/user";
         UserService.RegisterResult result = this.makeRequest("POST", path,
-                request, UserService.RegisterResult.class);
+                request, UserService.RegisterResult.class, null);
         return new String[]{result.username(), result.authToken()};
     }
 
+
     public String[] loginUser(String username, String password) throws ResponseException {
-        // Special login request object
+        // Login request object
         UserService.LoginRequest request = new UserService.LoginRequest(username, password);
 
         var path = "/session";
         UserService.LoginResult result = this.makeRequest("POST", path,
-                request, UserService.LoginResult.class);
+                request, UserService.LoginResult.class, null);
+        return new String[]{result.username(), result.authToken()};
     }
-        Spark.delete("/session", (req, res) ->
-            (new LogoutHandler(authDAO, userDAO)).handleRequest(req,
-                                                                res)); // logout
-        Spark.get("/game", (req, res) ->
-            (new ListHandler(authDAO, gameDAO)).handleRequest(req,
-                                                              res)); // list
+
+
+    public void logoutUser(String authToken) throws ResponseException {
+        // Logout request object
+        UserService.LogoutRequest request = new UserService.LogoutRequest(authToken);
+
+        var path = "/session";
+        this.makeRequest("DELETE", path,
+                request, UserService.LogoutResult.class, authToken);
+
+    }
+
+
+    public List<GameService.ReducedGameData> listGames(String authToken) throws ResponseException {
+        // No request object exists
+        var path = "/game";
+        GameService.ListResult result = this.makeRequest("GET", path,
+                null, GameService.ListResult.class, authToken);
+
+        // Might need to change this to actually include the games. Not sure why it didn't from the beginning.
+        return result.games();
+    }
+
+
+    public int createGame(String authToken, String gameName) throws ResponseException {
+        GameService.CreateRequest request = new GameService.CreateRequest(gameName);
+
+        var path = "/game";
+        GameService.CreateResult result = this.makeRequest("POST", path,
+                request, GameService.CreateResult.class, authToken);
+
+        // Returns the game ID
+    }
+
+
+    public String joinGame(String authToken, String gameName) throws ResponseException {
+        GameService.JoinRequest request = new GameService.JoinRequest(null, null);
+
+        var path = "/game";
+        GameService.JoinResult result = this.makeRequest("POST", path,
+                request, GameService.JoinResult.class, authToken);
+    }
+
         Spark.post("/game", (req, res) ->
             (new CreateHandler(authDAO, gameDAO)).handleRequest(req,
                                                                 res)); // create game
@@ -76,13 +118,14 @@ public class ServerFacade {
         return response.pet();
     }
 
-    private <T> T makeRequest(String method, String path, Object request, Class<T> responseClass) throws ResponseException {
+    private <T> T makeRequest(String method, String path, Object request, Class<T> responseClass, String authToken) throws ResponseException {
         try {
             URL url = (new URI(serverUrl + path)).toURL();
             HttpURLConnection http = (HttpURLConnection) url.openConnection();
             http.setRequestMethod(method);
             http.setDoOutput(true);
 
+            writeHeader(authToken, http);
             writeBody(request, http);
             http.connect();
             throwIfNotSuccessful(http);
@@ -94,6 +137,15 @@ public class ServerFacade {
         }
     }
 
+
+    private static void writeHeader(String authToken, HttpURLConnection http) throws IOException {
+        if (authToken != null) {
+            http.addRequestProperty("authorization", authToken);
+            try (OutputStream reqBody = http.getOutputStream()) {
+                reqBody.write(authToken.getBytes());
+            }
+        }
+    }
 
     private static void writeBody(Object request, HttpURLConnection http) throws IOException {
         if (request != null) {
