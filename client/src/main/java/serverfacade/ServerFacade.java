@@ -25,25 +25,23 @@ public class ServerFacade {
     }
 
 
-    public String[] registerUser(String username, String password, String email) throws ResponseException {
+    public UserService.RegisterResult registerUser(String username, String password, String email) throws ResponseException {
         // Register request object
         UserService.RegisterRequest request = new UserService.RegisterRequest(username, password, email);
 
         var path = "/user";
-        UserService.RegisterResult result = this.makeRequest("POST", path,
+        return this.makeRequest("POST", path,
                 request, UserService.RegisterResult.class, null);
-        return new String[]{result.username(), result.authToken()};
     }
 
 
-    public String[] loginUser(String username, String password) throws ResponseException {
+    public UserService.LoginResult loginUser(String username, String password) throws ResponseException {
         // Login request object
         UserService.LoginRequest request = new UserService.LoginRequest(username, password);
 
         var path = "/session";
-        UserService.LoginResult result = this.makeRequest("POST", path,
+        return this.makeRequest("POST", path,
                 request, UserService.LoginResult.class, null);
-        return new String[]{result.username(), result.authToken()};
     }
 
 
@@ -58,26 +56,22 @@ public class ServerFacade {
     }
 
 
-    public List<GameService.ReducedGameData> listGames(String authToken) throws ResponseException {
+    public GameService.ListResult listGames(String authToken) throws ResponseException {
         // No request object exists
         var path = "/game";
-        GameService.ListResult result = this.makeRequest("GET", path,
+        return this.makeRequest("GET", path,
                 null, GameService.ListResult.class, authToken);
 
-        // Might need to change this to actually include the games. Not sure why it didn't from the beginning.
-        return result.games();
+        // Why does that not actually include the games?
     }
 
 
-    public int createGame(String authToken, String gameName) throws ResponseException {
+    public GameService.CreateResult createGame(String authToken, String gameName) throws ResponseException {
         GameService.CreateRequest request = new GameService.CreateRequest(gameName);
 
         var path = "/game";
-        GameService.CreateResult result = this.makeRequest("POST", path,
+        return this.makeRequest("POST", path,
                 request, GameService.CreateResult.class, authToken);
-
-        // Returns the game ID as an Integer
-        return result.gameID();
     }
 
 
