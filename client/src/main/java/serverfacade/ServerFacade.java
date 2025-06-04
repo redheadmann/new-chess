@@ -47,11 +47,10 @@ public class ServerFacade {
 
     public void logoutUser(String authToken) throws ResponseException {
         // Logout request object
-        UserService.LogoutRequest request = new UserService.LogoutRequest(authToken);
 
         var path = "/session";
         this.makeRequest("DELETE", path,
-                request, UserService.LogoutResult.class, authToken);
+                null, UserService.LogoutResult.class, authToken);
 
     }
 
@@ -76,7 +75,7 @@ public class ServerFacade {
 
 
     public void joinGame(String authToken, String playerColor, int gameID) throws ResponseException {
-        GameService.JoinRequest request = new GameService.JoinRequest(null, null);
+        GameService.JoinRequest request = new GameService.JoinRequest(playerColor, gameID);
 
         var path = "/game";
         GameService.JoinResult result = this.makeRequest("PUT", path,
@@ -107,9 +106,6 @@ public class ServerFacade {
     private static void writeHeader(String authToken, HttpURLConnection http) throws IOException {
         if (authToken != null) {
             http.addRequestProperty("authorization", authToken);
-            try (OutputStream reqBody = http.getOutputStream()) {
-                reqBody.write(authToken.getBytes());
-            }
         }
     }
 

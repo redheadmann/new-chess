@@ -17,7 +17,6 @@ public class ServerFacadeTests {
 
     private static TestUser existingUser;
     private static TestUser newUser;
-    private static TestCreateRequest createRequest;
     private static ServerFacade serverFacade;
     private static Server server;
     private String existingAuth;
@@ -32,7 +31,6 @@ public class ServerFacadeTests {
         serverFacade = new ServerFacade("http://localhost:8080");
         existingUser = new TestUser("ExistingUser", "existingUserPassword", "eu@mail.com");
         newUser = new TestUser("NewUser", "newUserPassword", "nu@mail.com");
-        createRequest = new TestCreateRequest("testGame");
     }
 
     @BeforeEach
@@ -43,7 +41,7 @@ public class ServerFacadeTests {
             throw new RuntimeException(e);
         }
 
-        //one user already logged in
+        //log one user in to start with
         UserService.RegisterResult regResult = null;
         try {
             regResult = serverFacade.registerUser(existingUser.getUsername(),
@@ -160,11 +158,6 @@ public class ServerFacadeTests {
         } catch (ResponseException e) {
             Assertions.assertTrue(Boolean.FALSE, "Failed to logout user for test");
         }
-
-        Assertions.assertThrows(ResponseException.class, () -> {
-            serverFacade.loginUser(existingUser.getUsername(),
-                    existingUser.getPassword());
-        });
     }
 
     @Test
@@ -245,9 +238,6 @@ public class ServerFacadeTests {
         GameService.CreateResult createResult = createGame(null);
 
         //join as white
-        TestJoinRequest joinRequest = new TestJoinRequest(ChessGame.TeamColor.WHITE, createResult.gameID());
-
-        //try join
         try {
             serverFacade.joinGame(existingAuth, "WHITE",
                     createResult.gameID());
