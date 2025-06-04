@@ -76,11 +76,12 @@ public class ServerFacade {
         GameService.CreateResult result = this.makeRequest("POST", path,
                 request, GameService.CreateResult.class, authToken);
 
-        // Returns the game ID
+        // Returns the game ID as an Integer
+        return result.gameID();
     }
 
 
-    public String joinGame(String authToken, String gameName) throws ResponseException {
+    public String joinGame(String authToken, String gameID) throws ResponseException {
         GameService.JoinRequest request = new GameService.JoinRequest(null, null);
 
         var path = "/game";
