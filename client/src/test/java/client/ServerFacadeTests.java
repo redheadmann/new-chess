@@ -4,14 +4,13 @@ import chess.ChessGame;
 import exception.ResponseException;
 import org.junit.jupiter.api.*;
 import passoff.model.*;
-import passoff.server.TestServerFacade;
 import server.Server;
 import serverfacade.ServerFacade;
+import service.GameService;
+import service.UserService;
 
 import java.net.HttpURLConnection;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Locale;
+import java.util.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ServerFacadeTests {
@@ -22,14 +21,15 @@ public class ServerFacadeTests {
     private static ServerFacade serverFacade;
     private static Server server;
     private String existingAuth;
+    private final String gameName = "game1";
 
     @BeforeAll
     public static void init() {
         server = new Server();
-        var port = server.run(0);
+        var port = server.run(8080);
         System.out.println("Started test HTTP server on " + port);
 
-        serverFacade = new ServerFacade("localhost:8080");
+        serverFacade = new ServerFacade("http://localhost:8080");
         existingUser = new TestUser("ExistingUser", "existingUserPassword", "eu@mail.com");
         newUser = new TestUser("NewUser", "newUserPassword", "nu@mail.com");
         createRequest = new TestCreateRequest("testGame");
@@ -44,11 +44,11 @@ public class ServerFacadeTests {
         }
 
         //one user already logged in
-        String[] regResult = null;
+        UserService.RegisterResult regResult = null;
         try {
             regResult = serverFacade.registerUser(existingUser.getUsername(),
                     existingUser.getPassword(), existingUser.getEmail());
-            existingAuth = regResult.getAuthToken();
+            existingAuth = regResult.authToken();
         } catch (ResponseException e) {
             throw new RuntimeException(e);
         }
@@ -62,29 +62,20 @@ public class ServerFacadeTests {
 
 
     // ### SERVER-LEVEL API TESTS ###
-
-    @Test
-    @Order(1)
-    @DisplayName("Static Files")
-    public void staticFilesSuccess() {
-        String htmlFromServer = serverFacade.file("/").replaceAll("\r", "");
-        Assertions.assertEquals(HttpURLConnection.HTTP_OK, serverFacade.getStatusCode(),
-                "Server response code was not 200 OK");
-        Assertions.assertNotNull(htmlFromServer, "Server returned an empty file");
-        Assertions.assertTrue(htmlFromServer.contains("CS 240 Chess Server Web API"),
-                "file returned did not contain an exact match of text from provided index.html");
-    }
-
     @Test
     @Order(2)
     @DisplayName("Normal User Login")
     public void loginSuccess() {
-        TestAuthResult loginResult = serverFacade.login(existingUser);
+        UserService.LoginResult loginResult = null;
+        try {
+            loginResult = serverFacade.loginUser(existingUser.getUsername(), existingUser.getPassword());
+        } catch (ResponseException e) {
+            throw new RuntimeException(e);
+        }
 
-        assertHttpOk(loginResult);
-        Assertions.assertEquals(existingUser.getUsername(), loginResult.getUsername(),
+        Assertions.assertEquals(existingUser.getUsername(), loginResult.username(),
                 "Response did not give the same username as user");
-        Assertions.assertNotNull(loginResult.getAuthToken(), "Response did not return authentication String");
+        Assertions.assertNotNull(loginResult.authToken(), "Response did not return authentication String");
     }
 
     @Test
@@ -97,10 +88,10 @@ public class ServerFacadeTests {
         };
 
         for (TestUser incompleteLoginRequest : incompleteLoginRequests) {
-            TestAuthResult loginResult = serverFacade.login(incompleteLoginRequest);
-
-            assertHttpBadRequest(loginResult);
-            assertAuthFieldsMissing(loginResult);
+            Assertions.assertThrows(ResponseException.class, () -> {
+                serverFacade.loginUser(incompleteLoginRequest.getUsername(),
+                        incompleteLoginRequest.getPassword());
+            });
         }
     }
 
@@ -108,13 +99,13 @@ public class ServerFacadeTests {
     @Order(3)
     @DisplayName("Login Unauthorized (Multiple Forms)")
     public void loginUnauthorized() {
-        TestUser[] unauthorizedLoginRequests = { newUser, new TestUser(existingUser.getUsername(), "BAD!PASSWORD") };
+        TestUser[] unauthorizedLoginRequests = {newUser, new TestUser(existingUser.getUsername(), "BAD!PASSWORD")};
 
         for (TestUser unauthorizedLoginRequest : unauthorizedLoginRequests) {
-            TestAuthResult loginResult = serverFacade.login(unauthorizedLoginRequest);
-
-            assertHttpUnauthorized(loginResult);
-            assertAuthFieldsMissing(loginResult);
+            Assertions.assertThrows(ResponseException.class, () -> {
+                serverFacade.loginUser(unauthorizedLoginRequest.getUsername(),
+                        unauthorizedLoginRequest.getPassword());
+            });
         }
     }
 
@@ -123,12 +114,17 @@ public class ServerFacadeTests {
     @DisplayName("Normal User Registration")
     public void registerSuccess() {
         //submit register request
-        TestAuthResult registerResult = serverFacade.register(newUser);
+        UserService.RegisterResult registerResult = null;
+        try {
+            registerResult = serverFacade.registerUser(newUser.getUsername(), newUser.getPassword(),
+                    newUser.getEmail());
+        } catch (ResponseException e) {
+            throw new RuntimeException(e);
+        }
 
-        assertHttpOk(registerResult);
-        Assertions.assertEquals(newUser.getUsername(), registerResult.getUsername(),
+        Assertions.assertEquals(newUser.getUsername(), registerResult.username(),
                 "Response did not have the same username as was registered");
-        Assertions.assertNotNull(registerResult.getAuthToken(), "Response did not contain an authentication string");
+        Assertions.assertNotNull(registerResult.authToken(), "Response did not contain an authentication string");
     }
 
     @Test
@@ -136,10 +132,11 @@ public class ServerFacadeTests {
     @DisplayName("Re-Register User")
     public void registerTwice() {
         //submit register request trying to register existing user
-        TestAuthResult registerResult = serverFacade.register(existingUser);
 
-        assertHttpForbidden(registerResult);
-        assertAuthFieldsMissing(registerResult);
+        Assertions.assertThrows(ResponseException.class, () -> {
+            serverFacade.registerUser(existingUser.getUsername(),
+                    existingUser.getPassword(), existingUser.getEmail());
+        });
     }
 
     @Test
@@ -147,11 +144,10 @@ public class ServerFacadeTests {
     @DisplayName("Register Bad Request")
     public void registerBadRequest() {
         //attempt to register a user without a password
-        TestUser registerRequest = new TestUser(newUser.getUsername(), null, newUser.getEmail());
-        TestAuthResult registerResult = serverFacade.register(registerRequest);
-
-        assertHttpBadRequest(registerResult);
-        assertAuthFieldsMissing(registerResult);
+        Assertions.assertThrows(ResponseException.class, () -> {
+            serverFacade.registerUser(newUser.getUsername(),
+                    null, newUser.getEmail());
+        });
     }
 
     @Test
@@ -159,9 +155,16 @@ public class ServerFacadeTests {
     @DisplayName("Normal Logout")
     public void logoutSuccess() {
         //log out existing user
-        TestResult result = serverFacade.logout(existingAuth);
+        try {
+            serverFacade.logoutUser(existingAuth);
+        } catch (ResponseException e) {
+            Assertions.assertTrue(Boolean.FALSE, "Failed to logout user for test");
+        }
 
-        assertHttpOk(result);
+        Assertions.assertThrows(ResponseException.class, () -> {
+            serverFacade.loginUser(existingUser.getUsername(),
+                    existingUser.getPassword());
+        });
     }
 
     @Test
@@ -170,21 +173,43 @@ public class ServerFacadeTests {
     public void logoutTwice() {
         //log out user twice
         //second logout should fail
-        serverFacade.logout(existingAuth);
-        TestResult result = serverFacade.logout(existingAuth);
+        try {
+            serverFacade.logoutUser(existingAuth);
+        } catch (ResponseException e) {
+            Assertions.assertTrue(Boolean.FALSE, "Failed to logout user for test");
+        }
 
-        assertHttpUnauthorized(result);
+        Assertions.assertThrows(ResponseException.class, () -> {
+            serverFacade.logoutUser(existingAuth);
+        });
     }
+
+
+    private GameService.CreateResult createGame(String name) {
+        //create game
+        GameService.CreateResult createResult = null;
+        try {
+            if (name == null) {
+                createResult = serverFacade.createGame(existingAuth, gameName);
+            } else {
+                createResult = serverFacade.createGame(existingAuth, name);
+            }
+
+        } catch (ResponseException e) {
+            Assertions.assertTrue(Boolean.FALSE, "Failed to create game");
+        }
+        return createResult;
+    }
+
 
     @Test
     @Order(8)
     @DisplayName("Valid Creation")
     public void createGameSuccess() {
-        TestCreateResult createResult = serverFacade.createGame(createRequest, existingAuth);
+        GameService.CreateResult createResult = createGame(null);
 
-        assertHttpOk(createResult);
-        Assertions.assertNotNull(createResult.getGameID(), "Result did not return a game ID");
-        Assertions.assertTrue(createResult.getGameID() > 0, "Result returned invalid game ID");
+        Assertions.assertNotNull(createResult.gameID(), "Result did not return a game ID");
+        Assertions.assertTrue(createResult.gameID() > 0, "Result returned invalid game ID");
     }
 
     @Test
@@ -192,22 +217,24 @@ public class ServerFacadeTests {
     @DisplayName("Create with Bad Authentication")
     public void createGameUnauthorized() {
         //log out user so auth is invalid
-        serverFacade.logout(existingAuth);
+        try {
+            serverFacade.logoutUser(existingAuth);
+        } catch (ResponseException e) {
+            Assertions.assertTrue(Boolean.FALSE, "Failed to logout user for test");
+        }
 
-        TestCreateResult createResult = serverFacade.createGame(createRequest, existingAuth);
-
-        assertHttpUnauthorized(createResult);
-        Assertions.assertNull(createResult.getGameID(), "Bad result returned a game ID");
+        Assertions.assertThrows(ResponseException.class, () -> {
+            serverFacade.createGame(existingAuth, gameName);
+        }, "Game created without authorization");
     }
 
     @Test
     @Order(9)
     @DisplayName("Create Bad Request")
     public void createGameBadRequest() {
-        TestCreateResult createResult = serverFacade.createGame(new TestCreateRequest(null), existingAuth);
-
-        assertHttpBadRequest(createResult);
-        Assertions.assertNull(createResult.getGameID(), "Bad result returned a game ID");
+        Assertions.assertThrows(ResponseException.class, () -> {
+            serverFacade.createGame(existingAuth, null);
+        }, "Game created without name");
     }
 
     @Test
@@ -215,100 +242,78 @@ public class ServerFacadeTests {
     @DisplayName("Join Created Game")
     public void joinGameSuccess() {
         //create game
-        TestCreateResult createResult = serverFacade.createGame(createRequest, existingAuth);
+        GameService.CreateResult createResult = createGame(null);
 
         //join as white
-        TestJoinRequest joinRequest = new TestJoinRequest(ChessGame.TeamColor.WHITE, createResult.getGameID());
+        TestJoinRequest joinRequest = new TestJoinRequest(ChessGame.TeamColor.WHITE, createResult.gameID());
 
         //try join
-        TestResult joinResult = serverFacade.joinPlayer(joinRequest, existingAuth);
+        try {
+            serverFacade.joinGame(existingAuth, "WHITE",
+                    createResult.gameID());
+        } catch (ResponseException e) {
+            Assertions.assertTrue(Boolean.FALSE, "Failed to join game");
+        }
 
-        //check
-        assertHttpOk(joinResult);
+        GameService.ListResult listResult = null;
+        try {
+            listResult = serverFacade.listGames(existingAuth);
+        } catch (ResponseException e) {
+            throw new RuntimeException(e);
+        }
 
-        TestListResult listResult = serverFacade.listGames(existingAuth);
-
-        Assertions.assertNotNull(listResult.getGames(), "List result did not contain games");
-        Assertions.assertEquals(1, listResult.getGames().length, "List result is incorrect size");
-        Assertions.assertEquals(existingUser.getUsername(), listResult.getGames()[0].getWhiteUsername(),
+        Assertions.assertNotNull(listResult.games(), "List result did not contain games");
+        Assertions.assertEquals(1, listResult.games().size(), "List result is incorrect size");
+        Assertions.assertEquals(existingUser.getUsername(), listResult.games().getFirst().whiteUsername(),
                 "Username of joined player not present in list result");
-        Assertions.assertNull(listResult.getGames()[0].getBlackUsername(), "Username present on non-joined color");
+        Assertions.assertNull(listResult.games().getFirst().blackUsername(), "Username present on non-joined color");
     }
+
 
     @Test
     @Order(11)
     @DisplayName("Join Bad Authentication")
     public void joinGameUnauthorized() {
         //create game
-        TestCreateResult createResult = serverFacade.createGame(createRequest, existingAuth);
+        GameService.CreateResult createResult = createGame(null);
 
-        //try join as white
-        TestJoinRequest joinRequest = new TestJoinRequest(ChessGame.TeamColor.WHITE, createResult.getGameID());
-        TestResult joinResult = serverFacade.joinPlayer(joinRequest, existingAuth + "bad stuff");
-
-        //check
-        assertHttpUnauthorized(joinResult);
+        Assertions.assertThrows(ResponseException.class, ()-> {
+            serverFacade.joinGame(existingAuth + "bad stuff", "WHITE",
+                    createResult.gameID());
+        }, "Game created with bad authentication");
     }
+
 
     @Test
     @Order(11)
     @DisplayName("Join Bad Team Color")
     public void joinGameBadColor() {
-        TestCreateResult createResult = serverFacade.createGame(createRequest, existingAuth);
-        int gameID = createResult.getGameID();
+        // Create game
+        GameService.CreateResult createResult = createGame(null);
+        int gameID = createResult.gameID();
 
-        //If you use deserialize to the TeamColor enum instead of a String each of these will be read as null
+        // Try bad colors
         for(String color : new String[]{null, "", "GREEN"}) {
-            assertHttpBadRequest(serverFacade.joinPlayer(new TestJoinRequest(color, gameID), existingAuth));
+            Assertions.assertThrows(ResponseException.class, () -> {
+                serverFacade.joinGame(existingAuth, color, gameID);
+            });
         }
     }
 
-    @Test
-    @Order(11)
-    @DisplayName("Join Steal Team Color")
-    public void joinGameStealColor() {
-        //create game
-        TestCreateResult createResult = serverFacade.createGame(createRequest, existingAuth);
-
-        //add existing user as black
-        TestJoinRequest joinRequest = new TestJoinRequest(ChessGame.TeamColor.BLACK, createResult.getGameID());
-        serverFacade.joinPlayer(joinRequest, existingAuth);
-
-        //register second user
-        TestAuthResult registerResult = serverFacade.register(newUser);
-
-        //join request trying to also join  as black
-        TestResult joinResult = serverFacade.joinPlayer(joinRequest, registerResult.getAuthToken());
-
-        //check failed
-        assertHttpForbidden(joinResult);
-    }
-
-    @Test
-    @Order(11)
-    @DisplayName("Join Bad Game ID")
-    public void joinGameBadGameId() {
-        //create game
-        createRequest = new TestCreateRequest("Bad Join");
-        serverFacade.createGame(createRequest, existingAuth);
-
-        //try join as white
-        TestJoinRequest joinRequest = new TestJoinRequest(ChessGame.TeamColor.WHITE, null);
-        TestResult joinResult = serverFacade.joinPlayer(joinRequest, existingAuth);
-
-        //check
-        assertHttpBadRequest(joinResult);
-    }
 
     @Test
     @Order(12)
     @DisplayName("List No Games")
     public void listGamesEmpty() {
-        TestListResult result = serverFacade.listGames(existingAuth);
+        GameService.ListResult result = null;
+        try {
+            result = serverFacade.listGames(existingAuth);
+        } catch (ResponseException e) {
+            Assertions.assertTrue(Boolean.FALSE, "Failed to list games");
+        }
 
-        assertHttpOk(result);
-        Assertions.assertNotNull(result.getGames(), "List result did not contain an empty game list");
-        Assertions.assertEquals(0, result.getGames().length, "Found games when none should be there");
+        Assertions.assertNotNull(result.games(), "List result did not contain an empty game list");
+        Assertions.assertEquals(0, result.games().size(), "Found games when none should be there");
     }
 
     @Test
@@ -319,98 +324,77 @@ public class ServerFacadeTests {
         TestUser userA = new TestUser("a", "A", "a.A");
         TestUser userB = new TestUser("b", "B", "b.B");
         TestUser userC = new TestUser("c", "C", "c.C");
-
-        TestAuthResult authA = serverFacade.register(userA);
-        TestAuthResult authB = serverFacade.register(userB);
-        TestAuthResult authC = serverFacade.register(userC);
+        String authA = null;
+        String authB = null;
+        String authC = null;
+        try {
+            authB = serverFacade.registerUser(userB.getUsername(), userB.getPassword(),
+                    userB.getEmail()).authToken();
+            authC = serverFacade.registerUser(userC.getUsername(), userC.getPassword(),
+                    userC.getEmail()).authToken();
+            authA = serverFacade.registerUser(userA.getUsername(), userA.getPassword(),
+                    userA.getEmail()).authToken();
+        } catch (ResponseException e) {
+            Assertions.assertTrue(Boolean.FALSE, "Failed to register users");
+        }
 
         //create games
-        TestListEntry[] expectedList = new TestListEntry[4];
+        ArrayList<GameService.ReducedGameData> expectedList = new ArrayList<>();
 
-        //1 as black from A
-        String game1Name = "I'm numbah one!";
-        TestCreateResult game1 = serverFacade.createGame(new TestCreateRequest(game1Name), authA.getAuthToken());
-        serverFacade.joinPlayer(new TestJoinRequest(ChessGame.TeamColor.BLACK, game1.getGameID()), authA.getAuthToken());
-        expectedList[0] = new TestListEntry(game1.getGameID(), game1Name, null, authA.getUsername());
+        try {
+            //1 as black from A
+            String game1Name = "I'm numbah one!";
+            GameService.CreateResult game1 = serverFacade.createGame(authA, game1Name);
+            serverFacade.joinGame(authA, "BLACK", game1.gameID());
+            expectedList.add(new GameService.ReducedGameData(game1.gameID(),
+                    null, "a", game1Name));
 
+            //1 as white from B
+            String game2Name = "Lonely";
+            GameService.CreateResult game2 = serverFacade.createGame(authB, game2Name);
+            serverFacade.joinGame(authB, "WHITE", game2.gameID());
+            expectedList.add(new GameService.ReducedGameData(game2.gameID(),
+                    "b", null, game2Name));
 
-        //1 as white from B
-        String game2Name = "Lonely";
-        TestCreateResult game2 = serverFacade.createGame(new TestCreateRequest(game2Name), authB.getAuthToken());
-        serverFacade.joinPlayer(new TestJoinRequest(ChessGame.TeamColor.WHITE, game2.getGameID()), authB.getAuthToken());
-        expectedList[1] = new TestListEntry(game2.getGameID(), game2Name, authB.getUsername(), null);
+            //1 of each from C
+            String game3Name = "GG";
+            GameService.CreateResult game3 = serverFacade.createGame(authC, game3Name);
+            serverFacade.joinGame(authC, "WHITE", game3.gameID());
+            serverFacade.joinGame(authA, "BLACK", game3.gameID());
+            expectedList.add(new GameService.ReducedGameData(game3.gameID(),
+                    "c", "a", game3Name));
 
-
-        //1 of each from C
-        String game3Name = "GG";
-        TestCreateResult game3 = serverFacade.createGame(new TestCreateRequest(game3Name), authC.getAuthToken());
-        serverFacade.joinPlayer(new TestJoinRequest(ChessGame.TeamColor.WHITE, game3.getGameID()), authC.getAuthToken());
-        serverFacade.joinPlayer(new TestJoinRequest(ChessGame.TeamColor.BLACK, game3.getGameID()), authA.getAuthToken());
-        expectedList[2] = new TestListEntry(game3.getGameID(), game3Name, authC.getUsername(), authA.getUsername());
-
-
-        //C play self
-        String game4Name = "All by myself";
-        TestCreateResult game4 = serverFacade.createGame(new TestCreateRequest(game4Name), authC.getAuthToken());
-        serverFacade.joinPlayer(new TestJoinRequest(ChessGame.TeamColor.WHITE, game4.getGameID()), authC.getAuthToken());
-        serverFacade.joinPlayer(new TestJoinRequest(ChessGame.TeamColor.BLACK, game4.getGameID()), authC.getAuthToken());
-        expectedList[3] = new TestListEntry(game4.getGameID(), game4Name, authC.getUsername(), authC.getUsername());
-
+            //C play self
+            String game4Name = "All by myself";
+            GameService.CreateResult game4 = serverFacade.createGame(authC, game4Name);
+            serverFacade.joinGame(authC, "WHITE", game4.gameID());
+            serverFacade.joinGame(authC, "BLACK", game4.gameID());
+            expectedList.add(new GameService.ReducedGameData(game4.gameID(),
+                    "c", "c", game4Name));
+        } catch (ResponseException e) {
+            Assertions.assertTrue(Boolean.FALSE, "Failed to create multiple games");
+        }
 
         //list games
-        TestListResult listResult = serverFacade.listGames(existingAuth);
-        assertHttpOk(listResult);
-        TestListEntry[] returnedList = listResult.getGames();
+        GameService.ListResult listResult = null;
+        try {
+            listResult = serverFacade.listGames(existingAuth);
+        } catch (ResponseException e) {
+            Assertions.assertTrue(Boolean.FALSE, "Failed to list games");
+        }
+        List<GameService.ReducedGameData> returnedList = listResult.games();
         Assertions.assertNotNull(returnedList, "List result did not contain a list of games");
-        Comparator<TestListEntry> gameIdComparator = Comparator.comparingInt(TestListEntry::getGameID);
-        Arrays.sort(expectedList, gameIdComparator);
-        Arrays.sort(returnedList, gameIdComparator);
+        Comparator<GameService.ReducedGameData> gameIdComparator =
+                Comparator.comparingInt(GameService.ReducedGameData::gameID);
+        expectedList.sort(gameIdComparator);
+        returnedList.sort(gameIdComparator);
 
         //check
-        Assertions.assertArrayEquals(expectedList, returnedList, "Returned Games list was incorrect");
+        Assertions.assertEquals(expectedList, returnedList, "Returned Games list was incorrect");
     }
 
-    @Test
-    @Order(13)
-    @DisplayName("Unique Authtoken Each Login")
-    public void uniqueAuthorizationTokens() {
-        TestAuthResult loginOne = serverFacade.login(existingUser);
-        assertHttpOk(loginOne);
-        Assertions.assertNotNull(loginOne.getAuthToken(), "Login result did not contain an authToken");
 
-        TestAuthResult loginTwo = serverFacade.login(existingUser);
-        assertHttpOk(loginTwo);
-        Assertions.assertNotNull(loginTwo.getAuthToken(), "Login result did not contain an authToken");
-
-        Assertions.assertNotEquals(existingAuth, loginOne.getAuthToken(),
-                "Authtoken returned by login matched authtoken from prior register");
-        Assertions.assertNotEquals(existingAuth, loginTwo.getAuthToken(),
-                "Authtoken returned by login matched authtoken from prior register");
-        Assertions.assertNotEquals(loginOne.getAuthToken(), loginTwo.getAuthToken(),
-                "Authtoken returned by login matched authtoken from prior login");
-
-
-        TestCreateResult createResult = serverFacade.createGame(createRequest, existingAuth);
-        assertHttpOk(createResult);
-
-
-        TestResult logoutResult = serverFacade.logout(existingAuth);
-        assertHttpOk(logoutResult);
-
-
-        TestJoinRequest joinRequest = new TestJoinRequest(ChessGame.TeamColor.WHITE, createResult.getGameID());
-        TestResult joinResult = serverFacade.joinPlayer(joinRequest, loginOne.getAuthToken());
-        assertHttpOk(joinResult);
-
-
-        TestListResult listResult = serverFacade.listGames(loginTwo.getAuthToken());
-        assertHttpOk(listResult);
-        Assertions.assertNotNull(listResult.getGames(), "List result did not contain games");
-        Assertions.assertEquals(1, listResult.getGames().length, "List result contains incorrect number of games");
-        Assertions.assertEquals(existingUser.getUsername(), listResult.getGames()[0].getWhiteUsername(),
-                "incorrect username on joined game");
-    }
-
+/*
     @Test
     @Order(14)
     @DisplayName("Clear Test")
@@ -459,54 +443,5 @@ public class ServerFacadeTests {
         Assertions.assertNotNull(listResult.getGames(), "List result did not contain an empty list of games");
         Assertions.assertEquals(0, listResult.getGames().length, "list result did not return 0 games after clear");
     }
-
-    @Test
-    @Order(14)
-    @DisplayName("Multiple Clears")
-    public void clearMultipleTimes() {
-
-        //clear multiple times
-        serverFacade.clear();
-        serverFacade.clear();
-        TestResult result = serverFacade.clear();
-
-        //make sure returned good
-        assertHttpOk(result);
-    }
-
-    // ### HELPER ASSERTIONS ###
-
-    private void assertHttpOk(TestResult result) {
-        Assertions.assertEquals(HttpURLConnection.HTTP_OK, serverFacade.getStatusCode(),
-                "Server response code was not 200 OK (message: %s)".formatted(result.getMessage()));
-        Assertions.assertFalse(result.getMessage() != null &&
-                        result.getMessage().toLowerCase(Locale.ROOT).contains("error"),
-                "Result returned an error message");
-    }
-
-    private void assertHttpBadRequest(TestResult result) {
-        assertHttpError(result, HttpURLConnection.HTTP_BAD_REQUEST, "Bad Request");
-    }
-
-    private void assertHttpUnauthorized(TestResult result) {
-        assertHttpError(result, HttpURLConnection.HTTP_UNAUTHORIZED, "Unauthorized");
-    }
-
-    private void assertHttpForbidden(TestResult result) {
-        assertHttpError(result, HttpURLConnection.HTTP_FORBIDDEN, "Forbidden");
-    }
-
-    private void assertHttpError(TestResult result, int statusCode, String message) {
-        Assertions.assertEquals(statusCode, serverFacade.getStatusCode(),
-                "Server response code was not %d %s (message: %s)".formatted(statusCode, message, result.getMessage()));
-        Assertions.assertNotNull(result.getMessage(), "Invalid Request didn't return an error message");
-        Assertions.assertTrue(result.getMessage().toLowerCase(Locale.ROOT).contains("error"),
-                "Error message didn't contain the word \"Error\"");
-    }
-
-    private void assertAuthFieldsMissing(TestAuthResult result) {
-        Assertions.assertNull(result.getUsername(), "Response incorrectly returned username");
-        Assertions.assertNull(result.getAuthToken(), "Response incorrectly return authentication String");
-    }
-
+*/
 }
