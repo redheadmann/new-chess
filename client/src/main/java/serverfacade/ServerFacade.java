@@ -81,43 +81,14 @@ public class ServerFacade {
     }
 
 
-    public String joinGame(String authToken, String gameID) throws ResponseException {
+    public void joinGame(String authToken, String playerColor, int gameID) throws ResponseException {
         GameService.JoinRequest request = new GameService.JoinRequest(null, null);
 
         var path = "/game";
-        GameService.JoinResult result = this.makeRequest("POST", path,
+        GameService.JoinResult result = this.makeRequest("PUT", path,
                 request, GameService.JoinResult.class, authToken);
     }
 
-        Spark.post("/game", (req, res) ->
-            (new CreateHandler(authDAO, gameDAO)).handleRequest(req,
-                                                                res)); // create game
-        Spark.put("/game", (req, res) ->
-            (new JoinHandler(authDAO, gameDAO)).handleRequest(req,
-                                                              res)); // join game
-
-    public GameData addGame(GameData gameData) throws ResponseException {
-        var path = "/pet";
-        return this.makeRequest("POST", path, null, null);
-    }
-
-    public void deletePet(int id) throws ResponseException {
-        var path = String.format("/pet/%s", id);
-        this.makeRequest("DELETE", path, null, null);
-    }
-
-    public void deleteAllPets() throws ResponseException {
-        var path = "/pet";
-        this.makeRequest("DELETE", path, null, null);
-    }
-
-    public GameData[] listPets() throws ResponseException {
-        var path = "/pet";
-        record listPetResponse(GameData[] pet) {
-        }
-        var response = this.makeRequest("GET", path, null, listPetResponse.class);
-        return response.pet();
-    }
 
     private <T> T makeRequest(String method, String path, Object request, Class<T> responseClass, String authToken) throws ResponseException {
         try {
