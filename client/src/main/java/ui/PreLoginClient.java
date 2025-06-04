@@ -23,6 +23,7 @@ public class PreLoginClient {
             return switch (cmd) {
                 case "register" -> register(params);
                 case "login" -> login();
+                case "quit" -> "quit";
                 default -> help();
             };
         } catch (ResponseException ex) {

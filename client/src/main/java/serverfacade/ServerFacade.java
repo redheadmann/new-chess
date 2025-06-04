@@ -3,6 +3,7 @@ package serverfacade;
 import com.google.gson.Gson;
 import exception.ResponseException;
 import model.GameData;
+import service.UserService;
 
 import java.io.*;
 import java.net.*;
@@ -15,6 +16,42 @@ public class ServerFacade {
         serverUrl = url;
     }
 
+
+    public void clear() throws ResponseException {
+        var path = "/db";
+        this.makeRequest("DELETE", path, null, null);
+    }
+
+    public String[] registerUser(String username, String password, String email) throws ResponseException {
+        // Create special register request object
+        UserService.RegisterRequest request = new UserService.RegisterRequest(username, password, email);
+
+        var path = "/user";
+        UserService.RegisterResult result = this.makeRequest("POST", path,
+                request, UserService.RegisterResult.class);
+        return new String[]{result.username(), result.authToken()};
+    }
+
+    public String[] loginUser(String username, String password) throws ResponseException {
+        // Special login request object
+        UserService.LoginRequest request = new UserService.LoginRequest(username, password);
+
+        var path = "/session";
+        UserService.LoginResult result = this.makeRequest("POST", path,
+                request, UserService.LoginResult.class);
+    }
+        Spark.delete("/session", (req, res) ->
+            (new LogoutHandler(authDAO, userDAO)).handleRequest(req,
+                                                                res)); // logout
+        Spark.get("/game", (req, res) ->
+            (new ListHandler(authDAO, gameDAO)).handleRequest(req,
+                                                              res)); // list
+        Spark.post("/game", (req, res) ->
+            (new CreateHandler(authDAO, gameDAO)).handleRequest(req,
+                                                                res)); // create game
+        Spark.put("/game", (req, res) ->
+            (new JoinHandler(authDAO, gameDAO)).handleRequest(req,
+                                                              res)); // join game
 
     public GameData addGame(GameData gameData) throws ResponseException {
         var path = "/pet";
