@@ -6,7 +6,7 @@ import chess.ChessPiece;
 import chess.ChessPosition;
 import exception.ResponseException;
 import serverfacade.ServerFacade;
-import service.GameService;
+import records.GameRecords;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -76,7 +76,7 @@ public class PostLoginClient {
         if (params.length == 1) {
             try {
                 String gameName = params[0];
-                GameService.CreateResult result = server.createGame(authToken, gameName);
+                GameRecords.CreateResult result = server.createGame(authToken, gameName);
 
                 return "success";
             } catch (NumberFormatException ignored) {
@@ -86,11 +86,11 @@ public class PostLoginClient {
 
     }
 
-    private String createHashMapReturnString(GameService.ListResult result) {
+    private String createHashMapReturnString(GameRecords.ListResult result) {
         StringBuilder str = new StringBuilder();
 
         int gameNumber = 0;
-        for (GameService.ReducedGameData gameData : result.games()) {
+        for (GameRecords.ReducedGameData gameData : result.games()) {
             gameNumber ++;
             gameMap.put(gameNumber, gameData.gameID());
             str.append( String.format("%d: %s\n", gameNumber, gameData.gameName()) );
@@ -102,7 +102,7 @@ public class PostLoginClient {
     public String listGames(String... params) throws ResponseException{
         if (params.length == 0) {
             try {
-                GameService.ListResult result = server.listGames(authToken);
+                GameRecords.ListResult result = server.listGames(authToken);
 
 
                 return createHashMapReturnString(result);
