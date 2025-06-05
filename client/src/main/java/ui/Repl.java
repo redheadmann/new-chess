@@ -21,6 +21,19 @@ public class Repl {
         preLoginClient = new PreLoginClient(serverUrl);
     }
 
+    private void setState(String result) {
+        if (Objects.equals(result, LOGOUT_MESSAGE)) {
+            state = State.SIGNED_OUT;
+        }
+    }
+
+    private void handleAuthToken(String authToken) {
+        if (authToken != null) {
+            postLoginClient.setAuthToken(authToken);
+            state = State.SIGNED_IN;
+        }
+    }
+
     public void run() {
         System.out.println(SET_BG_COLOR_DARK_GREY + SET_TEXT_COLOR_WHITE + "Welcome to the chess client! Type \"help\" for a list of commands.");
         System.out.print(preLoginClient.help());
@@ -37,9 +50,8 @@ public class Repl {
                         result = postLoginClient.eval(line);
                         System.out.print(SET_TEXT_COLOR_BLUE + result);
 
-                        if (Objects.equals(result, LOGOUT_MESSAGE)) {
-                            state = State.SIGNED_OUT;
-                        }
+
+                        setState(result);
                     }
                     case SIGNED_OUT -> {
                         PreLoginClient.ReturnValue returnValue = preLoginClient.eval(line);
@@ -47,10 +59,7 @@ public class Repl {
                         String authToken = returnValue.authToken();
 
                         System.out.print(SET_TEXT_COLOR_BLUE + result);
-                        if (authToken != null) {
-                            postLoginClient.setAuthToken(authToken);
-                            state = State.SIGNED_IN;
-                        }
+                        handleAuthToken(authToken);
                     }
                     case IN_GAME -> {
                         System.out.print("Not yet implemented");
@@ -65,13 +74,6 @@ public class Repl {
         //
         System.out.println();
     }
-
-    /*
-    public void notify(Notification notification) {
-        System.out.println(RED + notification.message());
-        printPrompt();
-    }
-     */
 
     private void printPrompt() {
         String stateString = switch (state) {
