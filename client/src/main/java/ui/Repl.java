@@ -36,7 +36,7 @@ public class Repl {
 
     public void run() {
         System.out.println(SET_BG_COLOR_DARK_GREY + SET_TEXT_COLOR_WHITE + "Welcome to the chess client! Type \"help\" for a list of commands.");
-        System.out.print(preLoginClient.help());
+        System.out.print(preLoginClient.help().value());
 
         Scanner scanner = new Scanner(System.in);
         String result = "";

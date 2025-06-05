@@ -8,7 +8,6 @@ import exception.ResponseException;
 import serverfacade.ServerFacade;
 import records.GameRecords;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -93,7 +92,8 @@ public class PostLoginClient {
         for (GameRecords.ReducedGameData gameData : result.games()) {
             gameNumber ++;
             gameMap.put(gameNumber, gameData.gameID());
-            str.append( String.format("%d: %s\n", gameNumber, gameData.gameName()) );
+            str.append( String.format("%d: %s\n whiteUsername:%s blackUsername:%s",
+                    gameNumber, gameData.gameName(), gameData.whiteUsername(), gameData.blackUsername()) );
         }
 
         return str.toString();
@@ -116,7 +116,7 @@ public class PostLoginClient {
     private enum Color {
         WHITE,
         BLACK
-    };
+    }
 
 
     private Color updateColor(Color color) {
@@ -300,7 +300,7 @@ public class PostLoginClient {
                 SET_TEXT_COLOR_BLUE + "list" +
                 SET_TEXT_COLOR_WHITE + " - games\n" +
                 SET_TEXT_COLOR_BLUE + "join <ID> [WHITE|BLACK]" +
-                SET_TEXT_COLOR_WHITE + " - a game" +
+                SET_TEXT_COLOR_WHITE + " - a game\n" +
                 SET_TEXT_COLOR_BLUE + "observe <ID>" +
                 SET_TEXT_COLOR_WHITE + " - a game\n" +
                 SET_TEXT_COLOR_BLUE + "logout" +
