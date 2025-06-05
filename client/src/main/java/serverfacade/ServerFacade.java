@@ -2,9 +2,6 @@ package serverfacade;
 
 import com.google.gson.Gson;
 import exception.ResponseException;
-import model.GameData;
-import service.UserService;
-import service.GameService;
 import records.GameRecords;
 import records.UserRecords;
 
@@ -26,23 +23,23 @@ public class ServerFacade {
     }
 
 
-    public UserService.RegisterResult registerUser(String username, String password, String email) throws ResponseException {
+    public UserRecords.RegisterResult registerUser(String username, String password, String email) throws ResponseException {
         // Register request object
-        UserService.RegisterRequest request = new UserService.RegisterRequest(username, password, email);
+        UserRecords.RegisterRequest request = new UserRecords.RegisterRequest(username, password, email);
 
         var path = "/user";
         return this.makeRequest("POST", path,
-                request, UserService.RegisterResult.class, null);
+                request, UserRecords.RegisterResult.class, null);
     }
 
 
-    public UserService.LoginResult loginUser(String username, String password) throws ResponseException {
+    public UserRecords.LoginResult loginUser(String username, String password) throws ResponseException {
         // Login request object
-        UserService.LoginRequest request = new UserService.LoginRequest(username, password);
+        UserRecords.LoginRequest request = new UserRecords.LoginRequest(username, password);
 
         var path = "/session";
         return this.makeRequest("POST", path,
-                request, UserService.LoginResult.class, null);
+                request, UserRecords.LoginResult.class, null);
     }
 
 
@@ -51,36 +48,36 @@ public class ServerFacade {
 
         var path = "/session";
         this.makeRequest("DELETE", path,
-                null, UserService.LogoutResult.class, authToken);
+                null, UserRecords.LogoutResult.class, authToken);
 
     }
 
 
-    public GameService.ListResult listGames(String authToken) throws ResponseException {
+    public GameRecords.ListResult listGames(String authToken) throws ResponseException {
         // No request object exists
         var path = "/game";
         return this.makeRequest("GET", path,
-                null, GameService.ListResult.class, authToken);
+                null, GameRecords.ListResult.class, authToken);
 
         // Why does that not actually include the games?
     }
 
 
-    public GameService.CreateResult createGame(String authToken, String gameName) throws ResponseException {
-        GameService.CreateRequest request = new GameService.CreateRequest(gameName);
+    public GameRecords.CreateResult createGame(String authToken, String gameName) throws ResponseException {
+        GameRecords.CreateRequest request = new GameRecords.CreateRequest(gameName);
 
         var path = "/game";
         return this.makeRequest("POST", path,
-                request, GameService.CreateResult.class, authToken);
+                request, GameRecords.CreateResult.class, authToken);
     }
 
 
     public void joinGame(String authToken, String playerColor, int gameID) throws ResponseException {
-        GameService.JoinRequest request = new GameService.JoinRequest(playerColor, gameID);
+        GameRecords.JoinRequest request = new GameRecords.JoinRequest(playerColor, gameID);
 
         var path = "/game";
-        GameService.JoinResult result = this.makeRequest("PUT", path,
-                request, GameService.JoinResult.class, authToken);
+        GameRecords.JoinResult result = this.makeRequest("PUT", path,
+                request, GameRecords.JoinResult.class, authToken);
     }
 
 

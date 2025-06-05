@@ -6,8 +6,8 @@ import org.junit.jupiter.api.*;
 import passoff.model.*;
 import server.Server;
 import serverfacade.ServerFacade;
-import service.GameService;
-import service.UserService;
+import records.GameRecords;
+import records.UserRecords;
 
 import java.net.HttpURLConnection;
 import java.util.*;
@@ -42,7 +42,7 @@ public class ServerFacadeTests {
         }
 
         //log one user in to start with
-        UserService.RegisterResult regResult = null;
+        UserRecords.RegisterResult regResult = null;
         try {
             regResult = serverFacade.registerUser(existingUser.getUsername(),
                     existingUser.getPassword(), existingUser.getEmail());
@@ -64,7 +64,7 @@ public class ServerFacadeTests {
     @Order(2)
     @DisplayName("Normal User Login")
     public void loginSuccess() {
-        UserService.LoginResult loginResult = null;
+        UserRecords.LoginResult loginResult = null;
         try {
             loginResult = serverFacade.loginUser(existingUser.getUsername(), existingUser.getPassword());
         } catch (ResponseException e) {
@@ -112,7 +112,7 @@ public class ServerFacadeTests {
     @DisplayName("Normal User Registration")
     public void registerSuccess() {
         //submit register request
-        UserService.RegisterResult registerResult = null;
+        UserRecords.RegisterResult registerResult = null;
         try {
             registerResult = serverFacade.registerUser(newUser.getUsername(), newUser.getPassword(),
                     newUser.getEmail());
@@ -178,9 +178,9 @@ public class ServerFacadeTests {
     }
 
 
-    private GameService.CreateResult createGame(String name) {
+    private GameRecords.CreateResult createGame(String name) {
         //create game
-        GameService.CreateResult createResult = null;
+        GameRecords.CreateResult createResult = null;
         try {
             if (name == null) {
                 createResult = serverFacade.createGame(existingAuth, gameName);
@@ -199,7 +199,7 @@ public class ServerFacadeTests {
     @Order(8)
     @DisplayName("Valid Creation")
     public void createGameSuccess() {
-        GameService.CreateResult createResult = createGame(null);
+        GameRecords.CreateResult createResult = createGame(null);
 
         Assertions.assertNotNull(createResult.gameID(), "Result did not return a game ID");
         Assertions.assertTrue(createResult.gameID() > 0, "Result returned invalid game ID");
@@ -235,7 +235,7 @@ public class ServerFacadeTests {
     @DisplayName("Join Created Game")
     public void joinGameSuccess() {
         //create game
-        GameService.CreateResult createResult = createGame(null);
+        GameRecords.CreateResult createResult = createGame(null);
 
         //join as white
         try {
@@ -245,7 +245,7 @@ public class ServerFacadeTests {
             Assertions.assertTrue(Boolean.FALSE, "Failed to join game");
         }
 
-        GameService.ListResult listResult = null;
+        GameRecords.ListResult listResult = null;
         try {
             listResult = serverFacade.listGames(existingAuth);
         } catch (ResponseException e) {
@@ -265,7 +265,7 @@ public class ServerFacadeTests {
     @DisplayName("Join Bad Authentication")
     public void joinGameUnauthorized() {
         //create game
-        GameService.CreateResult createResult = createGame(null);
+        GameRecords.CreateResult createResult = createGame(null);
 
         Assertions.assertThrows(ResponseException.class, ()-> {
             serverFacade.joinGame(existingAuth + "bad stuff", "WHITE",
@@ -279,7 +279,7 @@ public class ServerFacadeTests {
     @DisplayName("Join Bad Team Color")
     public void joinGameBadColor() {
         // Create game
-        GameService.CreateResult createResult = createGame(null);
+        GameRecords.CreateResult createResult = createGame(null);
         int gameID = createResult.gameID();
 
         // Try bad colors
@@ -295,7 +295,7 @@ public class ServerFacadeTests {
     @Order(12)
     @DisplayName("List No Games")
     public void listGamesEmpty() {
-        GameService.ListResult result = null;
+        GameRecords.ListResult result = null;
         try {
             result = serverFacade.listGames(existingAuth);
         } catch (ResponseException e) {
@@ -329,53 +329,53 @@ public class ServerFacadeTests {
         }
 
         //create games
-        ArrayList<GameService.ReducedGameData> expectedList = new ArrayList<>();
+        ArrayList<GameRecords.ReducedGameData> expectedList = new ArrayList<>();
 
         try {
             //1 as black from A
             String game1Name = "I'm numbah one!";
-            GameService.CreateResult game1 = serverFacade.createGame(authA, game1Name);
+            GameRecords.CreateResult game1 = serverFacade.createGame(authA, game1Name);
             serverFacade.joinGame(authA, "BLACK", game1.gameID());
-            expectedList.add(new GameService.ReducedGameData(game1.gameID(),
+            expectedList.add(new GameRecords.ReducedGameData(game1.gameID(),
                     null, "a", game1Name));
 
             //1 as white from B
             String game2Name = "Lonely";
-            GameService.CreateResult game2 = serverFacade.createGame(authB, game2Name);
+            GameRecords.CreateResult game2 = serverFacade.createGame(authB, game2Name);
             serverFacade.joinGame(authB, "WHITE", game2.gameID());
-            expectedList.add(new GameService.ReducedGameData(game2.gameID(),
+            expectedList.add(new GameRecords.ReducedGameData(game2.gameID(),
                     "b", null, game2Name));
 
             //1 of each from C
             String game3Name = "GG";
-            GameService.CreateResult game3 = serverFacade.createGame(authC, game3Name);
+            GameRecords.CreateResult game3 = serverFacade.createGame(authC, game3Name);
             serverFacade.joinGame(authC, "WHITE", game3.gameID());
             serverFacade.joinGame(authA, "BLACK", game3.gameID());
-            expectedList.add(new GameService.ReducedGameData(game3.gameID(),
+            expectedList.add(new GameRecords.ReducedGameData(game3.gameID(),
                     "c", "a", game3Name));
 
             //C play self
             String game4Name = "All by myself";
-            GameService.CreateResult game4 = serverFacade.createGame(authC, game4Name);
+            GameRecords.CreateResult game4 = serverFacade.createGame(authC, game4Name);
             serverFacade.joinGame(authC, "WHITE", game4.gameID());
             serverFacade.joinGame(authC, "BLACK", game4.gameID());
-            expectedList.add(new GameService.ReducedGameData(game4.gameID(),
+            expectedList.add(new GameRecords.ReducedGameData(game4.gameID(),
                     "c", "c", game4Name));
         } catch (ResponseException e) {
             Assertions.assertTrue(Boolean.FALSE, "Failed to create multiple games");
         }
 
         //list games
-        GameService.ListResult listResult = null;
+        GameRecords.ListResult listResult = null;
         try {
             listResult = serverFacade.listGames(existingAuth);
         } catch (ResponseException e) {
             Assertions.assertTrue(Boolean.FALSE, "Failed to list games");
         }
-        List<GameService.ReducedGameData> returnedList = listResult.games();
+        List<GameRecords.ReducedGameData> returnedList = listResult.games();
         Assertions.assertNotNull(returnedList, "List result did not contain a list of games");
-        Comparator<GameService.ReducedGameData> gameIdComparator =
-                Comparator.comparingInt(GameService.ReducedGameData::gameID);
+        Comparator<GameRecords.ReducedGameData> gameIdComparator =
+                Comparator.comparingInt(GameRecords.ReducedGameData::gameID);
         expectedList.sort(gameIdComparator);
         returnedList.sort(gameIdComparator);
 

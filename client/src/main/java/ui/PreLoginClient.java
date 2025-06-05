@@ -1,8 +1,9 @@
 package ui;
 
 import exception.ResponseException;
+import records.UserRecords;
 import serverfacade.ServerFacade;
-import service.UserService;
+import records.UserRecords;
 
 import java.util.Arrays;
 
@@ -40,7 +41,7 @@ public class PreLoginClient {
             String username = params[0];
             String password = params[1];
             String email = params[2];
-            UserService.RegisterResult result = server.registerUser(username, password, email);
+            UserRecords.RegisterResult result = server.registerUser(username, password, email);
 
             // return the authToken, which the Repl class will use to
             //  instantiate the PostLoginClient
@@ -55,7 +56,7 @@ public class PreLoginClient {
         if (params.length == 2) {
             String username = params[0];
             String password = params[1];
-            UserService.LoginResult result = server.loginUser(username, password);
+            UserRecords.LoginResult result = server.loginUser(username, password);
 
             // return the authToken, which the Repl class will use to
             //  instantiate the PostLoginClient
