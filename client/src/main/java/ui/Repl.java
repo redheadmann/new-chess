@@ -3,6 +3,7 @@ package ui;
 //import client.websocket.NotificationHandler;
 //import webSocketMessages.Notification;
 
+import java.util.Objects;
 import java.util.Scanner;
 
 import static ui.EscapeSequences.*;
@@ -11,6 +12,9 @@ public class Repl {
     private final PostLoginClient postLoginClient;
     private final PreLoginClient preLoginClient;
     private State state = State.SIGNED_OUT;
+    private String authToken = null;
+
+    public static final String LOGOUT_MESSAGE = "logged out";
 
     public Repl(String serverUrl) {
         postLoginClient = new PostLoginClient(serverUrl);
@@ -19,7 +23,7 @@ public class Repl {
 
     public void run() {
         System.out.println(SET_BG_COLOR_DARK_GREY + SET_TEXT_COLOR_WHITE + "Welcome to the chess client! Type \"help\" for a list of commands.");
-        System.out.print(postLoginClient.help());
+        System.out.print(preLoginClient.help());
 
         Scanner scanner = new Scanner(System.in);
         String result = "";
@@ -32,10 +36,21 @@ public class Repl {
                     case SIGNED_IN -> {
                         result = postLoginClient.eval(line);
                         System.out.print(SET_TEXT_COLOR_BLUE + result);
+
+                        if (Objects.equals(result, LOGOUT_MESSAGE)) {
+                            state = State.SIGNED_OUT;
+                        }
                     }
                     case SIGNED_OUT -> {
-                        result = preLoginClient.eval(line);
+                        PreLoginClient.ReturnValue returnValue = preLoginClient.eval(line);
+                        result = returnValue.value();
+                        String authToken = returnValue.authToken();
+
                         System.out.print(SET_TEXT_COLOR_BLUE + result);
+                        if (authToken != null) {
+                            postLoginClient.setAuthToken(authToken);
+                            state = State.SIGNED_IN;
+                        }
                     }
                     case IN_GAME -> {
                         System.out.print("Not yet implemented");
@@ -64,7 +79,7 @@ public class Repl {
             case SIGNED_OUT -> "LOGGED_OUT";
             case IN_GAME -> "IN_GAME";
         };
-        System.out.print("\n" + SET_TEXT_COLOR_BLACK + RESET_BG_COLOR + "[" + stateString + "] >>> " + SET_TEXT_COLOR_GREEN);
+        System.out.print("\n" + SET_BG_COLOR_DARK_GREY + SET_TEXT_COLOR_WHITE + "[" + stateString + "] >>> " + SET_TEXT_COLOR_GREEN);
     }
 
 }
