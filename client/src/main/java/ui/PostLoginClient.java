@@ -124,7 +124,7 @@ public class PostLoginClient {
     }
 
     private void setDarkSquare(StringBuilder str) {
-        str.append(SET_BG_COLOR_BLACK);
+        str.append(SET_BG_COLOR_DARK_GREEN);
     }
 
     private void setLightSquare(StringBuilder str) {
