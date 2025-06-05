@@ -92,7 +92,7 @@ public class PostLoginClient {
         for (GameRecords.ReducedGameData gameData : result.games()) {
             gameNumber ++;
             gameMap.put(gameNumber, gameData.gameID());
-            str.append( String.format("%d: %s\n whiteUsername:%s blackUsername:%s",
+            str.append( String.format("%d: %s whiteUsername:%s blackUsername:%s\n",
                     gameNumber, gameData.gameName(), gameData.whiteUsername(), gameData.blackUsername()) );
         }
 
