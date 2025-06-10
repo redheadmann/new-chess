@@ -14,7 +14,7 @@ import java.util.HashMap;
 import static ui.EscapeSequences.*;
 import static ui.Repl.LOGOUT_MESSAGE;
 
-public class PostLoginClient {
+public class PostLoginClient implements Client {
 
     // These determine what game a user is accessing
     private HashMap<Integer, Integer> gameMap = new HashMap<>();
