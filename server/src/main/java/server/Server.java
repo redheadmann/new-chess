@@ -3,18 +3,19 @@ package server;
 import dataaccess.*;
 import handler.*;
 import spark.*;
+import server.websocket.WebSocketHandler;
+
+
+import java.net.http.WebSocket;
 
 public class Server {
+    private final GameDAO gameDAO;
+    private final UserDAO userDAO;
+    private final AuthDAO authDAO;
+    private final WebSocketHandler webSocketHandler;
 
-    public int run(int desiredPort) {
-        Spark.port(desiredPort);
-
-        Spark.staticFiles.location("web");
-
+    public Server() {
         // Instantiate Data Access Objects here so all service methods act on the same database
-        GameDAO gameDAO;
-        UserDAO userDAO;
-        AuthDAO authDAO;
         try {
             gameDAO = new SqlGameDAO();
             userDAO = new SqlUserDAO();
@@ -22,6 +23,17 @@ public class Server {
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
         }
+        webSocketHandler = new WebSocketHandler(gameDAO, userDAO, authDAO);
+    }
+
+    public int run(int desiredPort) {
+        Spark.port(desiredPort);
+
+        Spark.staticFiles.location("web");
+
+
+        // Websocket segment
+        Spark.webSocket("/ws", webSocketHandler);
 
         // Register your endpoints and handle exceptions here.
         Spark.delete("/db", (req, res) ->
