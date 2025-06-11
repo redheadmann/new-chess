@@ -2,6 +2,7 @@ package server.websocket;
 
 import com.google.gson.Gson;
 import dataaccess.*;
+import exception.ResponseException;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
@@ -28,6 +29,8 @@ public class WebSocketHandler {
 
             // Find the username. Throws unauthorized exception
             String username = getUsername();
+        } catch (ResponseException ex) {
+            sendMessage(session.getRemote(), new ErrorMessage("Error: unauthorized"));
         }
     }
 
