@@ -5,25 +5,46 @@ import websocket.messages.ServerMessage;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ConnectionManager {
-    public final ConcurrentHashMap<String, Connection> connections = new ConcurrentHashMap<>();
+    // Maps gameIDs to sets of Connection objects, which relate users in a game to their individual sessions
+    public final ConcurrentHashMap<Integer, ConcurrentHashMap<String, Connection>> gameSessions = new ConcurrentHashMap<>();
 
-    public void add(String visitorName, Session session) {
-        var connection = new Connection(visitorName, session);
-        connections.put(visitorName, connection);
+
+    public void add(Integer gameID, String username, Session session) {
+        // Create new entry in hashmap if gameID missing
+        ConcurrentHashMap<String, Connection> connections = gameSessions.get(gameID);
+        if (connections == null) {
+            connections = new ConcurrentHashMap<>();
+            connections.put(username, new Connection(username, session));
+        } else {
+            connections.put(username, new Connection(username, session));
+        }
+        gameSessions.put(gameID, connections);
     }
 
-    public void remove(String visitorName) {
-        connections.remove(visitorName);
+    public void remove(Integer gameID, String username) {
+        ConcurrentHashMap<String, Connection> connections = gameSessions.get(gameID);
+        if (connections == null) {
+            return;
+        }
+        // If the user is the last one viewing the game, remove the entire game from the hashmap
+        if (connections.size() == 1) {
+            gameSessions.remove(gameID);
+        } else { // otherwise, update the hashmap of users to Connection objects
+            connections.remove(username);
+        }
     }
 
-    public void broadcast(String excludeVisitorName, ServerMessage notification) throws IOException {
+    public void broadcast(Integer gameID, String excludeVisitorName, ServerMessage notification) throws IOException {
+        // Collect games and respective users to remove if they no longer have connections
+        HashMap<Integer, String> removalList = new HashMap<>();
         var removeList = new ArrayList<Connection>();
-        for (var c : connections.values()) {
+        for (var c : gameSessions.values()) {
             if (c.session.isOpen()) {
-                if (!c.visitorName.equals(excludeVisitorName)) {
+                if (!c.username.equals(excludeVisitorName)) {
                     c.send(notification.toString());
                 }
             } else {
@@ -33,7 +54,7 @@ public class ConnectionManager {
 
         // Clean up any connections that were left open.
         for (var c : removeList) {
-            connections.remove(c.visitorName);
+            gameSessions.remove(c.username);
         }
     }
 }
