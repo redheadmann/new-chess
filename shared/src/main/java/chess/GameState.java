@@ -2,8 +2,21 @@ package chess;
 
 import java.util.Objects;
 
+import static java.lang.Boolean.FALSE;
+
 public class GameState {
     private ChessGame.TeamColor teamTurn;
+
+
+    private boolean gameIsOver = FALSE;
+
+    public enum Winner {
+        NOT_YET,
+        BLACK,
+        WHITE,
+        DRAW,
+    }
+    private Winner winner = Winner.NOT_YET;
 
     public GameState () {
         this.teamTurn = ChessGame.TeamColor.WHITE; // game starts off with white to move
@@ -47,7 +60,24 @@ public class GameState {
         ChessPiece piece = board.getPiece(move.getStartPosition());
         ChessGame.TeamColor teamColor = piece.getTeamColor();
         if (teamColor == this.teamTurn) {return Boolean.TRUE;}
-        else {return Boolean.FALSE;}
+        else {return FALSE;}
+    }
+
+
+    public boolean isGameOver() {
+        return gameIsOver;
+    }
+
+    public void setGameIsOver(boolean gameIsOver) {
+        this.gameIsOver = gameIsOver;
+    }
+
+    public Winner getWinner() {
+        return winner;
+    }
+
+    public void setWinner(Winner winner) {
+        this.winner = winner;
     }
 
     @Override
@@ -59,11 +89,11 @@ public class GameState {
             return false;
         }
         GameState gameState = (GameState) o;
-        return teamTurn == gameState.teamTurn;
+        return gameIsOver == gameState.gameIsOver && teamTurn == gameState.teamTurn && winner == gameState.winner;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(teamTurn);
+        return Objects.hash(teamTurn, gameIsOver, winner);
     }
 }

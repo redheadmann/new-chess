@@ -54,13 +54,13 @@ public class WebSocketHandler {
                 case RESIGN -> resign(session, username, command);
             }
 
-        } catch (ResponseException ex) {
+        } catch (DataAccessException ex) {
             connections.broadcast(gameID, username, new ErrorMessage(
                     ServerMessage.ServerMessageType.ERROR, "Error: unauthorized"));
-        } catch (DataAccessException ex) {
-            connections.broadcast(1234, null, null);
         } catch (Exception ex) {
             ex.printStackTrace();
+            connections.broadcast(gameID, username, new ErrorMessage(
+                    ServerMessage.ServerMessageType.ERROR, "Error: " + ex.getMessage()));
         }
     }
 
@@ -73,18 +73,25 @@ public class WebSocketHandler {
     }
 
     private void connect(Session session, String username, UserGameCommand command) {
-
+        // Get gameID
+        Integer gameID = command.getGameID();
+        // Add user to connections
+        connections.add(gameID, username, session);
     }
 
     private void makeMove(Session session, String username, MakeMoveCommand command) {
-
+        // Get gameID and chess move
+        Integer gameID = command.getGameID();
+        ChessMove move = command.getMove();
     }
 
     private void leaveGame(Session session, String username, UserGameCommand command) {
-
+        // Get gameID
+        Integer gameID = command.getGameID();
     }
 
     private void resign(Session session, String username, UserGameCommand command) {
-
+        // Get gameID
+        Integer gameID = command.getGameID();
     }
 }

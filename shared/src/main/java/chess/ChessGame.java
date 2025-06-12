@@ -73,13 +73,20 @@ public class ChessGame {
      * @throws InvalidMoveException if move is invalid
      */
     public void makeMove(ChessMove move) throws InvalidMoveException {
+        // Check if game is over
+        if (gameState.isGameOver()) {
+            throw new InvalidMoveException("Game is over");
+        }
+
+        // Check for piece
         ChessPosition moveStartPosition = move.getStartPosition();
         Collection<ChessMove> validMoves = validMoves(moveStartPosition);
+
         // If validMoves is null, there was no piece at the given position
-        if (validMoves == null) {throw new InvalidMoveException("Move given for nonexistent piece");}
+        if (validMoves == null) {throw new InvalidMoveException("Move given was invalid");}
         // If there is a piece at the position, but it is not its turn, throw an exception
         if (!gameState.moveIsInTurn(move, board)) {
-            throw new InvalidMoveException("It is not this team's turn");
+            throw new InvalidMoveException("It is not this color's turn");
         }
 
         // If move is valid, put it in place and update whose turn it is
@@ -92,6 +99,44 @@ public class ChessGame {
         } else {
             throw new InvalidMoveException("Move given was invalid");
         }
+
+        // If move went through, check if the game is over
+        checkForGameOver();
+    }
+
+    private void checkForGameOver() {
+        // Find whose turn it is
+        TeamColor movingColor = gameState.teamTurn();
+        TeamColor otherColor;
+        if (movingColor == TeamColor.WHITE) {
+            otherColor = TeamColor.BLACK;
+        } else {
+            otherColor = TeamColor.WHITE;
+        }
+
+
+        // Check for stalemate
+        if (isInStalemate(movingColor)) {
+            gameState.setGameIsOver(Boolean.TRUE);
+            gameState.setWinner(GameState.Winner.DRAW);
+        }
+        // Check for checkmate
+        else if (isInCheckmate(movingColor)) {
+            gameState.setGameIsOver(Boolean.TRUE);
+            if (otherColor == TeamColor.WHITE) {
+                gameState.setWinner(GameState.Winner.BLACK);
+            } else {
+                gameState.setWinner(GameState.Winner.WHITE);
+            }
+        }
+    }
+
+    public boolean gameIsOver() {
+        return gameState.isGameOver();
+    }
+
+    public GameState.Winner getWinner() {
+        return gameState.getWinner();
     }
 
     /**
@@ -141,6 +186,17 @@ public class ChessGame {
      */
     public ChessBoard getBoard() {
         return this.board;
+    }
+
+
+    public void resign(TeamColor color) {
+        // Set game is over flag and determine the winner
+        gameState.setGameIsOver(Boolean.TRUE);
+        if (color == TeamColor.WHITE) {
+            gameState.setWinner(GameState.Winner.BLACK);
+        } else {
+            gameState.setWinner(GameState.Winner.WHITE);
+        }
     }
 
 
