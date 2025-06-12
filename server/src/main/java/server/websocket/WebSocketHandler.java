@@ -28,6 +28,8 @@ public class WebSocketHandler {
 
     @OnWebSocketMessage
     public void onMessage(Session session, String message) {
+        Integer gameID = null;
+        String username = null;
         try {
             Gson serializer = CommandSerializer.createSerializer();
             UserGameCommand command = serializer.fromJson(message, UserGameCommand.class);
@@ -39,11 +41,22 @@ public class WebSocketHandler {
             }
 
             // Find the username. Throws unauthorized exception
-            String authToken = getUsername(command.getAuthToken());
+            username = getUsername(command.getAuthToken());
 
+            // Save the session in connection manager
+            gameID = command.getGameID();
+            connections.add(gameID, username, session);
+
+            switch (command.getCommandType()) {
+                case CONNECT -> connect(session, username, command);
+                case MAKE_MOVE -> makeMove(session, username, (MakeMoveCommand) command);
+                case LEAVE -> leaveGame(session, username, command);
+                case RESIGN -> resign(session, username, command);
+            }
 
         } catch (ResponseException ex) {
-            sendMessage(session.getRemote(), new ErrorMessage("Error: unauthorized"));
+            connections.broadcast(gameID, username, new ErrorMessage(
+                    ServerMessage.ServerMessageType.ERROR, "Error: unauthorized"));
         } catch (DataAccessException ex) {
             connections.broadcast(1234, null, null);
         } catch (Exception ex) {
@@ -52,9 +65,26 @@ public class WebSocketHandler {
     }
 
 
-    private String getUsername(String authToken) throws DataAccessException{
+    private String getUsername(String authToken) throws DataAccessException {
+        // if the authToken is missing, throws an exception
         AuthData authData = authDAO.getAuth(authToken);
-        return "Not implemented";
+        // return the username
+        return authData.username();
     }
 
+    private void connect(Session session, String username, UserGameCommand command) {
+
+    }
+
+    private void makeMove(Session session, String username, MakeMoveCommand command) {
+
+    }
+
+    private void leaveGame(Session session, String username, UserGameCommand command) {
+
+    }
+
+    private void resign(Session session, String username, UserGameCommand command) {
+
+    }
 }
