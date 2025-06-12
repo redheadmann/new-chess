@@ -4,7 +4,6 @@ import org.eclipse.jetty.websocket.api.Session;
 import websocket.messages.ServerMessage;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -58,7 +57,15 @@ public class ConnectionManager {
         }
     }
 
-    public void broadcast(Integer gameID, String excludeVisitorName, ServerMessage notification) {
+    // Tells broadcast method whether to send to all, one, or all but one
+    public enum SendType {
+        ALL,
+        ONE,
+        EXCLUDE_ONE
+    }
+
+    public void broadcast(Integer gameID, String specialUsername, ServerMessage notification,
+                          SendType sendType) {
         // Collect games and respective users to remove if they no longer have connections
         HashMap<Integer, String> removalList = new HashMap<>();
 
@@ -67,13 +74,22 @@ public class ConnectionManager {
         ConcurrentHashMap<String, Connection> gameConnections = gameSessions.get(gameID);
         for (String username : gameConnections.keySet()) {
             Connection connection = gameConnections.get(username);
-            if (connection.session.isOpen()) {
-                if (!connection.username.equals(excludeVisitorName)) {
-                    try {
-                        connection.send(notification.toString());
-                    } catch (IOException ignore) { // ignore failed sends
-                        // log this in the future
-                    }
+            // Skip closed connections
+            if (!connection.session.isOpen()) {
+                continue;
+            }
+
+            // Send based on type
+            boolean shouldSend = switch (sendType) {
+                case ALL -> true;
+                case ONE -> connection.username.equals(specialUsername);
+                case EXCLUDE_ONE -> !connection.username.equals(specialUsername);
+            };
+            if (shouldSend) {
+                try {
+                    connection.send(notification.toString());
+                } catch (IOException ignore) { // ignore failed sends
+                    // log this in the future
                 }
             }
         }
@@ -81,4 +97,6 @@ public class ConnectionManager {
         // Clean up any connections that are no longer open
         cleanupDeadConnections();
     }
+
+
 }

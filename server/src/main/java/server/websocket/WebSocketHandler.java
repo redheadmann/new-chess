@@ -3,12 +3,10 @@ package server.websocket;
 import chess.ChessMove;
 import com.google.gson.Gson;
 import dataaccess.*;
-import exception.ResponseException;
 import model.AuthData;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
-import spark.serialization.Serializer;
 import websocket.commands.*;
 import websocket.messages.*;
 
@@ -56,14 +54,13 @@ public class WebSocketHandler {
 
         } catch (DataAccessException ex) {
             connections.broadcast(gameID, username, new ErrorMessage(
-                    ServerMessage.ServerMessageType.ERROR, "Error: unauthorized"));
+                    ServerMessage.ServerMessageType.ERROR, "Error: unauthorized"), );
         } catch (Exception ex) {
             ex.printStackTrace();
             connections.broadcast(gameID, username, new ErrorMessage(
-                    ServerMessage.ServerMessageType.ERROR, "Error: " + ex.getMessage()));
+                    ServerMessage.ServerMessageType.ERROR, "Error: " + ex.getMessage()), );
         }
     }
-
 
     private String getUsername(String authToken) throws DataAccessException {
         // if the authToken is missing, throws an exception
@@ -71,6 +68,7 @@ public class WebSocketHandler {
         // return the username
         return authData.username();
     }
+
 
     private void connect(Session session, String username, UserGameCommand command) {
         // Get gameID
@@ -88,6 +86,9 @@ public class WebSocketHandler {
     private void leaveGame(Session session, String username, UserGameCommand command) {
         // Get gameID
         Integer gameID = command.getGameID();
+
+        // Leave from connections manager
+        connections.remove(gameID, username);
     }
 
     private void resign(Session session, String username, UserGameCommand command) {
