@@ -38,23 +38,42 @@ public class ConnectionManager {
         }
     }
 
+    private void cleanupDeadConnections() {
+        HashMap<Integer, String> removalList = new HashMap<>();
+
+        // Find connections which are no longer open and close them
+        for (Integer gameID : gameSessions.keySet()) {
+            var gameConnections = gameSessions.get(gameID);
+            for (String username : gameConnections.keySet()) {
+                Connection connection = gameConnections.get(username);
+                if (!connection.session.isOpen()) {
+                    removalList.put(gameID, username);
+                }
+            }
+        }
+        // Close without issues brought by closing during iteration
+        for (Integer gameID : removalList.keySet()) {
+            String username = removalList.get(gameID);
+            remove(gameID, username);
+        }
+    }
+
     public void broadcast(Integer gameID, String excludeVisitorName, ServerMessage notification) throws IOException {
         // Collect games and respective users to remove if they no longer have connections
         HashMap<Integer, String> removalList = new HashMap<>();
-        var removeList = new ArrayList<Connection>();
-        for (var c : gameSessions.values()) {
-            if (c.session.isOpen()) {
-                if (!c.username.equals(excludeVisitorName)) {
-                    c.send(notification.toString());
+
+        // Broadcast to users in the game except the one we exclude
+        ConcurrentHashMap<String, Connection> gameConnections = gameSessions.get(gameID);
+        for (String username : gameConnections.keySet()) {
+            Connection connection = gameConnections.get(username);
+            if (connection.session.isOpen()) {
+                if (!connection.username.equals(excludeVisitorName)) {
+                    connection.send(notification.toString());
                 }
-            } else {
-                removeList.add(c);
             }
         }
 
-        // Clean up any connections that were left open.
-        for (var c : removeList) {
-            gameSessions.remove(c.username);
-        }
+        // Clean up any connections that are no longer open
+        cleanupDeadConnections();
     }
 }
