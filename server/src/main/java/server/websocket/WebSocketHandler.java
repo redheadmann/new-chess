@@ -29,9 +29,14 @@ public class WebSocketHandler {
             UserGameCommand command = new Gson().fromJson(message, UserGameCommand.class);
 
             // Find the username. Throws unauthorized exception
-            String username = getUsername();
+            String authToken = getUsername(command.getAuthToken());
+
+
         } catch (ResponseException ex) {
             sendMessage(session.getRemote(), new ErrorMessage("Error: unauthorized"));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+
         }
     }
 
