@@ -80,7 +80,7 @@ public class GameService {
 
         // join game
         try {
-            gameDAO.updateGame(username, color, gameID);
+            gameDAO.updateGame(username, color, gameID, null);
         } catch (DataAccessException e) {
             String errorMessage = e.getMessage();
             return new JoinResult(errorMessage);

@@ -74,8 +74,8 @@ public class ChessGame {
      */
     public void makeMove(ChessMove move) throws InvalidMoveException {
         // Check if game is over
-        if (gameState.isGameOver()) {
-            throw new InvalidMoveException("Game is over");
+        if (gameIsOver()) {
+            throw new InvalidMoveException("Error: game is over");
         }
 
         // Check for piece
@@ -83,10 +83,10 @@ public class ChessGame {
         Collection<ChessMove> validMoves = validMoves(moveStartPosition);
 
         // If validMoves is null, there was no piece at the given position
-        if (validMoves == null) {throw new InvalidMoveException("Move given was invalid");}
+        if (validMoves == null) {throw new InvalidMoveException("Error: move given was invalid");}
         // If there is a piece at the position, but it is not its turn, throw an exception
         if (!gameState.moveIsInTurn(move, board)) {
-            throw new InvalidMoveException("It is not this color's turn");
+            throw new InvalidMoveException("Error: it is not this color's turn");
         }
 
         // If move is valid, put it in place and update whose turn it is
@@ -97,7 +97,7 @@ public class ChessGame {
             // add the move to the game log
             board.getGameLog().addMove(move, oldPiece);
         } else {
-            throw new InvalidMoveException("Move given was invalid");
+            throw new InvalidMoveException("Error: move given was invalid");
         }
 
         // If move went through, check if the game is over
@@ -189,12 +189,16 @@ public class ChessGame {
     }
 
 
-    public void resign(TeamColor color) {
+    public void resign(TeamColor color) throws InvalidMoveException {
+        if (color == null) {
+            throw new InvalidMoveException("Error: need a color to resign");
+        }
+
         // Set game is over flag and determine the winner
         gameState.setGameIsOver(Boolean.TRUE);
         if (color == TeamColor.WHITE) {
             gameState.setWinner(GameState.Winner.BLACK);
-        } else {
+        } else if (color == TeamColor.BLACK) {
             gameState.setWinner(GameState.Winner.WHITE);
         }
     }

@@ -9,8 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static java.sql.Types.NULL;
-
 public class SqlGameDAO extends SqlDAO implements GameDAO {
     public SqlGameDAO() throws DataAccessException {
         String[] createStatements = {
@@ -110,7 +108,7 @@ public class SqlGameDAO extends SqlDAO implements GameDAO {
     }
 
     @Override
-    public void updateGame(String username, ChessGame.TeamColor playerColor, int gameID) throws DataAccessException {
+    public void updateGame(String username, ChessGame.TeamColor playerColor, int gameID, ChessGame game) throws DataAccessException {
         // Copy old game data
         GameData oldGame = this.getGame(gameID);
 

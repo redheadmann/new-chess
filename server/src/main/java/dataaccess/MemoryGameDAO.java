@@ -45,7 +45,7 @@ public class MemoryGameDAO implements  GameDAO {
     }
 
     @Override
-    public void updateGame(String username, ChessGame.TeamColor playerColor, int gameID) throws DataAccessException {
+    public void updateGame(String username, ChessGame.TeamColor playerColor, int gameID, ChessGame game) throws DataAccessException {
         // copy old game data
         GameData oldGame = this.getGame(gameID);
 

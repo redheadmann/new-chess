@@ -3,7 +3,6 @@ package dataaccess;
 import chess.ChessGame;
 import model.GameData;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -11,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
 class GameDAOTest {
 
     SqlGameDAO gameDAO;
@@ -146,7 +144,7 @@ class GameDAOTest {
 
             // Actual game
             GameData actual;
-            gameDAO.updateGame("New Name", ChessGame.TeamColor.WHITE, game1.gameID());
+            gameDAO.updateGame("New Name", ChessGame.TeamColor.WHITE, game1.gameID(), null);
             actual = gameDAO.getGame(game1.gameID());
 
             Assertions.assertEquals(expected, actual);
@@ -160,7 +158,7 @@ class GameDAOTest {
         setupGames();
 
         Assertions.assertThrows(DataAccessException.class, () -> {
-            gameDAO.updateGame("New Name", ChessGame.TeamColor.WHITE,123); // Invalid gameID
+            gameDAO.updateGame("New Name", ChessGame.TeamColor.WHITE,123, null); // Invalid gameID
         });
     }
 
