@@ -58,9 +58,10 @@ public class ConnectionManager {
         }
     }
 
-    public void broadcast(Integer gameID, String excludeVisitorName, ServerMessage notification) throws IOException {
+    public void broadcast(Integer gameID, String excludeVisitorName, ServerMessage notification) {
         // Collect games and respective users to remove if they no longer have connections
         HashMap<Integer, String> removalList = new HashMap<>();
+
 
         // Broadcast to users in the game except the one we exclude
         ConcurrentHashMap<String, Connection> gameConnections = gameSessions.get(gameID);
@@ -68,7 +69,11 @@ public class ConnectionManager {
             Connection connection = gameConnections.get(username);
             if (connection.session.isOpen()) {
                 if (!connection.username.equals(excludeVisitorName)) {
-                    connection.send(notification.toString());
+                    try {
+                        connection.send(notification.toString());
+                    } catch (IOException ignore) { // ignore failed sends
+                        // log this in the future
+                    }
                 }
             }
         }
