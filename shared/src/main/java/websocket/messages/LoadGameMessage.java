@@ -8,7 +8,7 @@ public class LoadGameMessage extends ServerMessage {
     private final ChessGame game;
 
     public LoadGameMessage(ServerMessageType type, ChessGame game) {
-        super(type);
+        super(ServerMessageType.LOAD_GAME);
         this.game = game;
     }
 
