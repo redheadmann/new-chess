@@ -1,5 +1,6 @@
 package dataaccess;
 
+import exception.UnauthorizedException;
 import model.AuthData;
 
 import com.google.gson.Gson;
@@ -46,7 +47,7 @@ public class SqlAuthDAO extends SqlDAO implements AuthDAO {
 
 
     @Override
-    public AuthData getAuth(String authToken) throws DataAccessException {
+    public AuthData getAuth(String authToken) throws DataAccessException, UnauthorizedException {
         String statement = "SELECT authData FROM auth WHERE authToken=?";
         AuthData authData;
         // Connect to the database and  extract a match for the given token
@@ -57,7 +58,7 @@ public class SqlAuthDAO extends SqlDAO implements AuthDAO {
             try (var rs = ps.executeQuery()) {
                 // If we don't find a matching authToken, throw unauthorized error
                 if (!rs.next()) {
-                    throw new DataAccessException("Error: unauthorized");
+                    throw new UnauthorizedException("Error: unauthorized");
                 }
                 // Otherwise, deserialize the data, make sure it exists, and return
                 String serializedData = rs.getString("authData");

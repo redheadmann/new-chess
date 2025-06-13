@@ -6,6 +6,7 @@ import chess.GameState;
 import chess.InvalidMoveException;
 import com.google.gson.Gson;
 import dataaccess.*;
+import exception.UnauthorizedException;
 import model.AuthData;
 import model.GameData;
 import org.eclipse.jetty.websocket.api.Session;
@@ -14,6 +15,7 @@ import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import websocket.commands.*;
 import websocket.messages.*;
 
+import java.io.IOException;
 import java.util.Objects;
 
 @WebSocket
@@ -35,14 +37,8 @@ public class WebSocketHandler {
         Integer gameID = null;
         String username = null;
         try {
-            Gson serializer = CommandSerializer.createSerializer();
+            Gson serializer = new Gson();
             UserGameCommand command = serializer.fromJson(message, UserGameCommand.class);
-
-            // Get the chess move if we have a MakeMoveCommand
-            ChessMove move;
-            if (command instanceof MakeMoveCommand) {
-                move = ((MakeMoveCommand) command).getMove();
-            }
 
             // Find the username. Throws unauthorized exception
             username = getUsername(command.getAuthToken());
@@ -58,6 +54,13 @@ public class WebSocketHandler {
                 case RESIGN -> resign(session, username, command);
             }
 
+        } catch (UnauthorizedException ex) {
+            // Send error to the user without adding to the connection manager
+            try {
+                session.getRemote().sendString(new ErrorMessage(ex.getMessage()).toString());
+            } catch (IOException ignore) {
+                // Log this
+            }
         } catch (InvalidMoveException ex) {
             connections.broadcast(gameID, username, new ErrorMessage(
                     ex.getMessage()), ConnectionManager.SendType.ONE);
@@ -72,7 +75,7 @@ public class WebSocketHandler {
         }
     }
 
-    private String getUsername(String authToken) throws DataAccessException {
+    private String getUsername(String authToken) throws DataAccessException, UnauthorizedException {
         // if the authToken is missing, throws an exception
         AuthData authData = authDAO.getAuth(authToken);
         // return the username

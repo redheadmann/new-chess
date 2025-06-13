@@ -1,5 +1,6 @@
 package dataaccess;
 
+import exception.UnauthorizedException;
 import model.AuthData;
 
 import java.util.HashMap;
@@ -19,10 +20,10 @@ public class MemoryAuthDAO implements AuthDAO {
     }
 
     @Override
-    public AuthData getAuth(String authToken) throws DataAccessException {
+    public AuthData getAuth(String authToken) throws UnauthorizedException {
         AuthData authData = data.get(authToken);
         if (authData == null) {
-            throw new DataAccessException("Cannot getAuth: authToken is not in database");
+            throw new UnauthorizedException("Error: authToken not in database");
         } else {
             return authData;
         }

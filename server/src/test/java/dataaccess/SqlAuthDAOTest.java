@@ -1,5 +1,6 @@
 package dataaccess;
 
+import exception.UnauthorizedException;
 import model.AuthData;
 import model.GameData;
 import org.junit.jupiter.api.Assertions;
@@ -32,7 +33,7 @@ class SqlAuthDAOTest {
             AuthData actual;
             actual = authDAO.getAuth(expected.authToken());
             Assertions.assertEquals(expected, actual);
-        } catch (DataAccessException e) {
+        } catch (UnauthorizedException | DataAccessException e) {
             throw new RuntimeException(e);
         }
     }
@@ -64,7 +65,7 @@ class SqlAuthDAOTest {
             Assertions.assertEquals(expected, userTwo);
             expected = authDAO.getAuth(userOne.authToken());
             Assertions.assertEquals(expected, userOne);
-        } catch (DataAccessException e) {
+        } catch (DataAccessException | UnauthorizedException e) {
             throw new RuntimeException(e);
         }
     }
@@ -76,7 +77,7 @@ class SqlAuthDAOTest {
             Assertions.assertThrows(DataAccessException.class, () -> {
                 authDAO.getAuth("failure");
             });
-        } catch (DataAccessException e) {
+        } catch (DataAccessException | UnauthorizedException e) {
             throw new RuntimeException(e);
         }
     }
@@ -96,7 +97,7 @@ class SqlAuthDAOTest {
             Assertions.assertThrows(DataAccessException.class, () -> {
                 authDAO.getAuth(user.authToken());
             });
-        } catch (DataAccessException e) {
+        } catch (DataAccessException | UnauthorizedException e) {
             throw new RuntimeException(e);
         }
     }
@@ -133,7 +134,7 @@ class SqlAuthDAOTest {
             Assertions.assertThrows(DataAccessException.class, () -> {
                 authDAO.getAuth(auth1.authToken()); // Invalid gameID
             });
-        } catch (DataAccessException e) {
+        } catch (DataAccessException | UnauthorizedException e) {
             throw new RuntimeException(e);
         }
     }
