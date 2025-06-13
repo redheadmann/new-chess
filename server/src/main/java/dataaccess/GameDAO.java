@@ -2,6 +2,7 @@ package dataaccess;
 
 import chess.ChessGame;
 import chess.InvalidMoveException;
+import exception.UnauthorizedException;
 import model.GameData;
 
 import java.util.List;
@@ -12,8 +13,8 @@ public interface GameDAO {
     List<GameData> listGames() throws DataAccessException;
     void updateGame(String username, ChessGame.TeamColor playerColor, int gameID) throws DataAccessException;
     void clear() throws DataAccessException;
-    boolean makeMove(int gameID, ChessGame game) throws InvalidMoveException, DataAccessException;
-
+    void makeMove(int gameID, ChessGame game) throws InvalidMoveException, DataAccessException;
+    void leaveGame(String username, int gameID) throws DataAccessException, UnauthorizedException;
 
     default String[] calculateUsernames(String username, ChessGame.TeamColor playerColor,
                                         GameData oldGame) throws DataAccessException{

@@ -193,6 +193,10 @@ public class ChessGame {
         if (color == null) {
             throw new InvalidMoveException("Error: need a color to resign");
         }
+        // Make sure game is not already over
+        if (gameIsOver()) {
+            throw new InvalidMoveException("Error: game is already over");
+        }
 
         // Set game is over flag and determine the winner
         gameState.setGameIsOver(Boolean.TRUE);

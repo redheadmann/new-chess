@@ -37,7 +37,7 @@ public class WebSocketHandler {
         Integer gameID = null;
         String username = null;
         try {
-            Gson serializer = new Gson();
+            Gson serializer = CommandSerializer.createSerializer();
             UserGameCommand command = serializer.fromJson(message, UserGameCommand.class);
 
             // Find the username. Throws unauthorized exception
@@ -256,7 +256,7 @@ public class WebSocketHandler {
         // Update game by resigning
         ChessGame game = gameData.game();
         game.resign(playerInfo.color());
-        gameDAO.updateGame(username, color, gameID);
+        gameDAO.makeMove(gameID, game);
 
         // Inform all clients that the player resigned
         connections.broadcast(gameID, username,

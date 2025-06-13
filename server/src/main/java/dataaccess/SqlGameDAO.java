@@ -1,13 +1,14 @@
 package dataaccess;
 
 import chess.ChessGame;
-import chess.InvalidMoveException;
 import com.google.gson.Gson;
+import exception.UnauthorizedException;
 import model.GameData;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 public class SqlGameDAO extends SqlDAO implements GameDAO {
@@ -140,7 +141,7 @@ public class SqlGameDAO extends SqlDAO implements GameDAO {
     }
 
     @Override
-    public boolean makeMove(int gameID, ChessGame game) throws DataAccessException {
+    public void makeMove(int gameID, ChessGame game) throws DataAccessException {
         // Copy old game data
         GameData oldGame = this.getGame(gameID);
 
@@ -158,7 +159,35 @@ public class SqlGameDAO extends SqlDAO implements GameDAO {
         executeUpdate(statement, gameJson, gameID);
 
         // Return value tells us whether the new game is over
-        return game.gameIsOver();
+        game.gameIsOver();
+    }
+
+    @Override
+    public void leaveGame(String username, int gameID) throws DataAccessException, UnauthorizedException {
+        // Copy old game data
+        GameData oldGame = this.getGame(gameID);
+
+        // Find usernames to make null
+        String whiteUsername = oldGame.whiteUsername();
+        String blackUsername = oldGame.blackUsername();
+        GameData newGameData;
+        if (Objects.equals(whiteUsername, username) && Objects.equals(blackUsername, username)) {
+            newGameData = new GameData(oldGame.gameID(), null, null,
+                    oldGame.gameName(), oldGame.game());
+        } else if (Objects.equals(whiteUsername, username)) {
+            newGameData = new GameData(oldGame.gameID(), null, blackUsername,
+                    oldGame.gameName(), oldGame.game());
+        } else if (Objects.equals(blackUsername, username)) {
+            newGameData = new GameData(oldGame.gameID(), whiteUsername, null,
+                    oldGame.gameName(), oldGame.game());
+        } else {
+            throw new UnauthorizedException("Error: unable to leave game");
+        }
+
+        // Update database
+        String gameJson = new Gson().toJson(newGameData);
+        String statement = "UPDATE game SET gameData=? WHERE gameID=?";
+        executeUpdate(statement, gameJson, gameID);
     }
 
 }

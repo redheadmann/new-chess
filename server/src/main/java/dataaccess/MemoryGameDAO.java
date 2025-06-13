@@ -1,7 +1,7 @@
 package dataaccess;
 
 import chess.ChessGame;
-import chess.InvalidMoveException;
+import exception.UnauthorizedException;
 import model.GameData;
 
 import java.util.*;
@@ -69,7 +69,7 @@ public class MemoryGameDAO implements  GameDAO {
     }
 
     @Override
-    public boolean makeMove(int gameID, ChessGame game) throws DataAccessException {
+    public void makeMove(int gameID, ChessGame game) throws DataAccessException {
         // Copy old game data
         GameData oldGame = this.getGame(gameID);
 
@@ -85,6 +85,32 @@ public class MemoryGameDAO implements  GameDAO {
         data.put(gameID, newGameData);
 
         // Return value tells us whether the new game is over
-        return game.gameIsOver();
+        game.gameIsOver();
+    }
+
+    @Override
+    public void leaveGame(String username, int gameID) throws UnauthorizedException, DataAccessException {
+        // Copy old game data
+        GameData oldGame = this.getGame(gameID);
+
+        // Find usernames to make null
+        String whiteUsername = oldGame.whiteUsername();
+        String blackUsername = oldGame.blackUsername();
+        GameData newGameData;
+        if (Objects.equals(whiteUsername, username) && Objects.equals(blackUsername, username)) {
+            newGameData = new GameData(oldGame.gameID(), null, null,
+                        oldGame.gameName(), oldGame.game());
+        } else if (Objects.equals(whiteUsername, username)) {
+            newGameData = new GameData(oldGame.gameID(), null, blackUsername,
+                    oldGame.gameName(), oldGame.game());
+        } else if (Objects.equals(blackUsername, username)) {
+            newGameData = new GameData(oldGame.gameID(), whiteUsername, null,
+                    oldGame.gameName(), oldGame.game());
+        } else {
+            throw new UnauthorizedException("Error: unable to leave game");
+        }
+
+        // Insert into old position
+        data.put(gameID, newGameData);
     }
 }
