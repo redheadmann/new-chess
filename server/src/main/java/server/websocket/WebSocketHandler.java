@@ -224,6 +224,9 @@ public class WebSocketHandler {
         // Get gameID
         Integer gameID = command.getGameID();
 
+        // Leave game
+        gameDAO.leaveGame(username, gameID);
+
         // Leave from connections manager
         connections.remove(gameID, username);
 

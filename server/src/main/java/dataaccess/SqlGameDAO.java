@@ -170,7 +170,7 @@ public class SqlGameDAO extends SqlDAO implements GameDAO {
         // Find usernames to make null
         String whiteUsername = oldGame.whiteUsername();
         String blackUsername = oldGame.blackUsername();
-        GameData newGameData;
+        GameData newGameData = oldGame;
         if (Objects.equals(whiteUsername, username) && Objects.equals(blackUsername, username)) {
             newGameData = new GameData(oldGame.gameID(), null, null,
                     oldGame.gameName(), oldGame.game());
@@ -180,8 +180,6 @@ public class SqlGameDAO extends SqlDAO implements GameDAO {
         } else if (Objects.equals(blackUsername, username)) {
             newGameData = new GameData(oldGame.gameID(), whiteUsername, null,
                     oldGame.gameName(), oldGame.game());
-        } else {
-            throw new UnauthorizedException("Error: unable to leave game");
         }
 
         // Update database
