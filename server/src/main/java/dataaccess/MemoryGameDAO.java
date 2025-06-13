@@ -1,6 +1,7 @@
 package dataaccess;
 
 import chess.ChessGame;
+import chess.InvalidMoveException;
 import model.GameData;
 
 import java.util.*;
@@ -45,7 +46,7 @@ public class MemoryGameDAO implements  GameDAO {
     }
 
     @Override
-    public void updateGame(String username, ChessGame.TeamColor playerColor, int gameID, ChessGame game) throws DataAccessException {
+    public void updateGame(String username, ChessGame.TeamColor playerColor, int gameID) throws DataAccessException {
         // Copy old game data
         GameData oldGame = this.getGame(gameID);
 
@@ -54,15 +55,10 @@ public class MemoryGameDAO implements  GameDAO {
         String newWhiteUsername = names[0];
         String newBlackUsername = names[1];
 
-        // Determine updated game. If game parameter is null, copy old game data
-        ChessGame newGame = game;
-        if (newGame == null) {
-            newGame = oldGame.game();
-        }
 
         // create new GameData model and insert in old position
         GameData newGameData = new GameData(oldGame.gameID(), newWhiteUsername, newBlackUsername,
-                oldGame.gameName(), newGame);
+                oldGame.gameName(), oldGame.game());
 
         data.put(gameID, newGameData);
     }
@@ -70,5 +66,25 @@ public class MemoryGameDAO implements  GameDAO {
     @Override
     public void clear() throws DataAccessException {
         data.clear();
+    }
+
+    @Override
+    public boolean makeMove(int gameID, ChessGame game) throws DataAccessException {
+        // Copy old game data
+        GameData oldGame = this.getGame(gameID);
+
+        // Make sure game is not null
+        if (game == null) {
+            throw new DataAccessException("Error: updated game should not be null");
+        }
+
+        // create new GameData model and insert in old position
+        GameData newGameData = new GameData(oldGame.gameID(), oldGame.whiteUsername(), oldGame.blackUsername(),
+                oldGame.gameName(), game);
+
+        data.put(gameID, newGameData);
+
+        // Return value tells us whether the new game is over
+        return game.gameIsOver();
     }
 }

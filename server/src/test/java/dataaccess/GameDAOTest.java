@@ -144,7 +144,7 @@ class GameDAOTest {
 
             // Actual game
             GameData actual;
-            gameDAO.updateGame("New Name", ChessGame.TeamColor.WHITE, game1.gameID(), null);
+            gameDAO.updateGame("New Name", ChessGame.TeamColor.WHITE, game1.gameID());
             actual = gameDAO.getGame(game1.gameID());
 
             Assertions.assertEquals(expected, actual);
@@ -158,7 +158,7 @@ class GameDAOTest {
         setupGames();
 
         Assertions.assertThrows(DataAccessException.class, () -> {
-            gameDAO.updateGame("New Name", ChessGame.TeamColor.WHITE,123, null); // Invalid gameID
+            gameDAO.updateGame("New Name", ChessGame.TeamColor.WHITE,123); // Invalid gameID
         });
     }
 

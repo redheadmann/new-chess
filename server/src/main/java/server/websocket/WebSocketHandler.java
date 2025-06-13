@@ -151,7 +151,6 @@ public class WebSocketHandler {
         Integer gameID = command.getGameID();
         ChessMove move = command.getMove();
 
-
         // Get the game and determine if the user is playing (+ their color) or observing
         PlayerInfo playerInfo = getPlayerInfo(username, gameID);
         ChessGame.TeamColor color = playerInfo.color();
@@ -170,7 +169,7 @@ public class WebSocketHandler {
 
         // Update game
         game.makeMove(move);
-        gameDAO.updateGame(username, color, gameID, game);
+        gameDAO.updateGame(username, color, gameID);
 
         // Inform all clients that the player resigned
         connections.broadcast(gameID, username,
@@ -215,7 +214,7 @@ public class WebSocketHandler {
         // Update game by resigning
         ChessGame game = gameData.game();
         game.resign(playerInfo.color());
-        gameDAO.updateGame(username, color, gameID, game);
+        gameDAO.updateGame(username, color, gameID);
 
         // Inform all clients that the player resigned
         connections.broadcast(gameID, username,

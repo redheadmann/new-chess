@@ -1,6 +1,7 @@
 package dataaccess;
 
 import chess.ChessGame;
+import chess.InvalidMoveException;
 import com.google.gson.Gson;
 import model.GameData;
 
@@ -108,7 +109,7 @@ public class SqlGameDAO extends SqlDAO implements GameDAO {
     }
 
     @Override
-    public void updateGame(String username, ChessGame.TeamColor playerColor, int gameID, ChessGame game) throws DataAccessException {
+    public void updateGame(String username, ChessGame.TeamColor playerColor, int gameID) throws DataAccessException {
         // Copy old game data
         GameData oldGame = this.getGame(gameID);
 
@@ -117,15 +118,9 @@ public class SqlGameDAO extends SqlDAO implements GameDAO {
         String newWhiteUsername = names[0];
         String newBlackUsername = names[1];
 
-        // If game is null, use old game
-        ChessGame newGame = game;
-        if (newGame == null) {
-            newGame = oldGame.game();
-        }
-
         // create new GameData model and serialize it
         GameData newGameData = new GameData(oldGame.gameID(), newWhiteUsername, newBlackUsername,
-                oldGame.gameName(), newGame);
+                oldGame.gameName(), oldGame.game());
         String gameJson = new Gson().toJson(newGameData);
 
         // Insert into database
@@ -142,6 +137,28 @@ public class SqlGameDAO extends SqlDAO implements GameDAO {
         } catch (DataAccessException e) {
             throw new DataAccessException("Error clearing database: ", e);
         }
+    }
+
+    @Override
+    public boolean makeMove(int gameID, ChessGame game) throws DataAccessException {
+        // Copy old game data
+        GameData oldGame = this.getGame(gameID);
+
+        // Make sure game is not null
+        if (game == null) {
+            throw new DataAccessException("Error: updated game should not be null");
+        }
+
+        // create new GameData model and insert in old position
+        GameData newGameData = new GameData(oldGame.gameID(), oldGame.whiteUsername(), oldGame.blackUsername(),
+                oldGame.gameName(), game);
+        String gameJson = new Gson().toJson(newGameData);
+        // update database
+        String statement = "UPDATE game SET gameData=? WHERE gameID=?";
+        executeUpdate(statement, gameJson, gameID);
+
+        // Return value tells us whether the new game is over
+        return game.gameIsOver();
     }
 
 }
