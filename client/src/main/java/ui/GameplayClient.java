@@ -30,11 +30,6 @@ public class GameplayClient implements Client {
         createPieceMap(whiteMap, blackMap);
     }
 
-    public void setAuthToken(String authToken) {
-        this.authToken = authToken;
-    }
-
-
     public String eval(String input) {
         try {
             var tokens = input.split(" ");
@@ -54,6 +49,10 @@ public class GameplayClient implements Client {
         } catch (ResponseException ex) {
             return ex.getMessage();
         }
+    }
+
+    public void setAuthToken(String authToken) {
+        this.authToken = authToken;
     }
 
     public String createGame(String... params) throws ResponseException{

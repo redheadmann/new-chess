@@ -37,7 +37,6 @@ public class PostLoginClient implements Client {
         this.authToken = authToken;
     }
 
-
     public String eval(String input) {
         try {
             var tokens = input.split(" ");
