@@ -10,7 +10,7 @@ import java.util.HashMap;
 import static ui.EscapeSequences.*;
 import static ui.EscapeSequences.SET_TEXT_COLOR_WHITE;
 
-public class GameplayClient {
+public class GameplayClient implements Client {
 
 
     // These determine what game a user is accessing
@@ -27,19 +27,7 @@ public class GameplayClient {
     public GameplayClient(String serverUrl) {
         server = new ServerFacade(serverUrl);
 
-        whiteMap.put(ChessPiece.PieceType.KING, WHITE_KING);
-        whiteMap.put(ChessPiece.PieceType.QUEEN, WHITE_QUEEN);
-        whiteMap.put(ChessPiece.PieceType.ROOK, WHITE_ROOK);
-        whiteMap.put(ChessPiece.PieceType.KNIGHT, WHITE_KNIGHT);
-        whiteMap.put(ChessPiece.PieceType.BISHOP, WHITE_BISHOP);
-        whiteMap.put(ChessPiece.PieceType.PAWN, WHITE_PAWN);
-
-        blackMap.put(ChessPiece.PieceType.KING, BLACK_KING);
-        blackMap.put(ChessPiece.PieceType.QUEEN, BLACK_QUEEN);
-        blackMap.put(ChessPiece.PieceType.ROOK, BLACK_ROOK);
-        blackMap.put(ChessPiece.PieceType.KNIGHT, BLACK_KNIGHT);
-        blackMap.put(ChessPiece.PieceType.BISHOP, BLACK_BISHOP);
-        blackMap.put(ChessPiece.PieceType.PAWN, BLACK_PAWN);
+        createPieceMap(whiteMap, blackMap);
     }
 
     public void setAuthToken(String authToken) {
