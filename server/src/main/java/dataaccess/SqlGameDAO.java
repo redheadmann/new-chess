@@ -117,10 +117,16 @@ public class SqlGameDAO extends SqlDAO implements GameDAO {
         String newWhiteUsername = names[0];
         String newBlackUsername = names[1];
 
+        // If game is null, use old game
+        ChessGame newGame = game;
+        if (newGame == null) {
+            newGame = oldGame.game();
+        }
+
         // create new GameData model and serialize it
-        GameData newGame = new GameData(oldGame.gameID(), newWhiteUsername, newBlackUsername,
-                oldGame.gameName(), oldGame.game());
-        String gameJson = new Gson().toJson(newGame);
+        GameData newGameData = new GameData(oldGame.gameID(), newWhiteUsername, newBlackUsername,
+                oldGame.gameName(), newGame);
+        String gameJson = new Gson().toJson(newGameData);
 
         // Insert into database
         String statement = "UPDATE game SET gameData=? WHERE gameID=?";

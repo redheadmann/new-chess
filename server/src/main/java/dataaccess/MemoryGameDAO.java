@@ -46,7 +46,7 @@ public class MemoryGameDAO implements  GameDAO {
 
     @Override
     public void updateGame(String username, ChessGame.TeamColor playerColor, int gameID, ChessGame game) throws DataAccessException {
-        // copy old game data
+        // Copy old game data
         GameData oldGame = this.getGame(gameID);
 
         // Find new usernames
@@ -54,11 +54,17 @@ public class MemoryGameDAO implements  GameDAO {
         String newWhiteUsername = names[0];
         String newBlackUsername = names[1];
 
-        // create new GameData model and insert in old position
-        GameData newGame = new GameData(oldGame.gameID(), newWhiteUsername, newBlackUsername,
-                oldGame.gameName(), oldGame.game());
+        // Determine updated game. If game parameter is null, copy old game data
+        ChessGame newGame = game;
+        if (newGame == null) {
+            newGame = oldGame.game();
+        }
 
-        data.put(gameID, newGame);
+        // create new GameData model and insert in old position
+        GameData newGameData = new GameData(oldGame.gameID(), newWhiteUsername, newBlackUsername,
+                oldGame.gameName(), newGame);
+
+        data.put(gameID, newGameData);
     }
 
     @Override
