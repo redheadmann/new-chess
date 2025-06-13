@@ -2,6 +2,7 @@ package server.websocket;
 
 import chess.ChessGame;
 import chess.ChessMove;
+import chess.GameState;
 import chess.InvalidMoveException;
 import com.google.gson.Gson;
 import dataaccess.*;
@@ -161,7 +162,6 @@ public class WebSocketHandler {
         if (playerInfo.playerType == PlayerType.OBSERVER) {
             throw new DataAccessException("Error: observers cannot make a move");
         }
-
         // Only continue if it is player's turn
         if (game.getTeamTurn() != color) {
             throw new InvalidMoveException("Error: it is not your turn!");
@@ -169,12 +169,51 @@ public class WebSocketHandler {
 
         // Update game
         game.makeMove(move);
-        gameDAO.updateGame(username, color, gameID);
+        gameDAO.makeMove(gameID, game);
 
-        // Inform all clients that the player resigned
+        // Send load_game message to everybody
         connections.broadcast(gameID, username,
-                new NotificationMessage(username + " resigned"),
-                ConnectionManager.SendType.ALL);
+                new LoadGameMessage(game), ConnectionManager.SendType.ALL);
+        // send notification telling what move was made
+        connections.broadcast(gameID, username,
+                new NotificationMessage(username + " made move " + move.toString()),
+                ConnectionManager.SendType.EXCLUDE_ONE);
+        // Send notification if in check, or game is over for checkmate or stalemate
+        sendGameOverMessages(gameID, color, username, game);
+    }
+
+    private void sendGameOverMessages(Integer gameID, ChessGame.TeamColor playerColor, String username,
+                                      ChessGame game) {
+
+        // Check if game is over
+        if (!game.gameIsOver()) {
+            // check for... check
+            if (game.isInCheck(ChessGame.TeamColor.WHITE)) {
+                connections.broadcast(gameID, username,
+                        new NotificationMessage("White is in check"),
+                        ConnectionManager.SendType.ALL);
+            } else if (game.isInCheck(ChessGame.TeamColor.BLACK)) {
+                connections.broadcast(gameID, username,
+                        new NotificationMessage("Black is in check"),
+                        ConnectionManager.SendType.ALL);
+            }
+            return;
+        }
+
+        GameState.Winner winner = game.getWinner();
+        if (winner == GameState.Winner.DRAW) {
+            connections.broadcast(gameID, username,
+                    new NotificationMessage("Game ended in stalemate"),
+                    ConnectionManager.SendType.ALL);
+        } else if (winner == GameState.Winner.BLACK) {
+            connections.broadcast(gameID, username,
+                    new NotificationMessage("Black wins!"),
+                    ConnectionManager.SendType.ALL);
+        } else if (winner == GameState.Winner.WHITE) {
+            connections.broadcast(gameID, username,
+                    new NotificationMessage("White wins!"),
+                    ConnectionManager.SendType.ALL);
+        }
     }
 
     private void leaveGame(Session session, String username, UserGameCommand command)
