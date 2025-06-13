@@ -1,5 +1,4 @@
-import chess.*;
-import ui.Repl;
+import repl.Repl;
 
 public class Main {
     public static void main(String[] args) {

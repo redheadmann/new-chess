@@ -13,6 +13,7 @@ import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import websocket.commands.*;
+import websocket.deserializers.CommandDeserializer;
 import websocket.messages.*;
 
 import java.io.IOException;
@@ -37,7 +38,7 @@ public class WebSocketHandler {
         Integer gameID = null;
         String username = null;
         try {
-            Gson serializer = CommandSerializer.createSerializer();
+            Gson serializer = CommandDeserializer.createSerializer();
             UserGameCommand command = serializer.fromJson(message, UserGameCommand.class);
 
             // Find the username. Throws unauthorized exception

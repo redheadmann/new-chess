@@ -1,7 +1,11 @@
-package ui;
+package repl;
 
 //import client.websocket.NotificationHandler;
 //import webSocketMessages.Notification;
+
+import ui.PostLoginClient;
+import ui.PreLoginClient;
+import websocket.messages.ServerMessage;
 
 import java.util.Objects;
 import java.util.Scanner;
@@ -82,6 +86,10 @@ public class Repl {
             case IN_GAME -> "IN_GAME";
         };
         System.out.print("\n" + SET_BG_COLOR_DARK_GREY + SET_TEXT_COLOR_WHITE + "[" + stateString + "] >>> " + SET_TEXT_COLOR_GREEN);
+    }
+
+    public void notify(ServerMessage message) {
+
     }
 
 }

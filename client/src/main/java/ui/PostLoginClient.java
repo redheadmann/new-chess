@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import static ui.EscapeSequences.*;
-import static ui.Repl.LOGOUT_MESSAGE;
+import static repl.Repl.LOGOUT_MESSAGE;
 
 public class PostLoginClient implements Client {
 

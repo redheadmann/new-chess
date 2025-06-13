@@ -1,4 +1,4 @@
-package ui;
+package repl;
 
 public enum State {
     SIGNED_IN,

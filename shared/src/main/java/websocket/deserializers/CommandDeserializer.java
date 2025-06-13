@@ -1,4 +1,4 @@
-package server.websocket;
+package websocket.deserializers;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -7,7 +7,7 @@ import com.google.gson.TypeAdapter;
 import websocket.commands.MakeMoveCommand;
 import websocket.commands.UserGameCommand;
 
-public class CommandSerializer {
+public class CommandDeserializer {
 
     public static Gson createSerializer() {
         GsonBuilder gsonBuilder = new GsonBuilder();
