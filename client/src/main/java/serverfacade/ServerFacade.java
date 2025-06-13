@@ -1,7 +1,7 @@
 package serverfacade;
 
 import com.google.gson.Gson;
-import exception.ResponseException;
+import sharedexception.ResponseException;
 import records.GameRecords;
 import records.UserRecords;
 

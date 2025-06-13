@@ -1,4 +1,4 @@
-package exception;
+package sharedexception;
 
 import com.google.gson.Gson;
 

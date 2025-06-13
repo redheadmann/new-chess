@@ -1,6 +1,6 @@
 package ui;
 
-import exception.ResponseException;
+import sharedexception.ResponseException;
 
 public interface Client {
 

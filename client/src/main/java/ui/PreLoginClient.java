@@ -1,9 +1,8 @@
 package ui;
 
-import exception.ResponseException;
+import sharedexception.ResponseException;
 import records.UserRecords;
 import serverfacade.ServerFacade;
-import records.UserRecords;
 
 import java.util.Arrays;
 

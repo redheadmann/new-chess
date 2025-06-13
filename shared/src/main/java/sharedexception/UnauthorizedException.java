@@ -1,4 +1,4 @@
-package exception;
+package sharedexception;
 
 public class UnauthorizedException extends RuntimeException {
     public UnauthorizedException(String message) {

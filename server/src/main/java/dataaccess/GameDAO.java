@@ -2,10 +2,11 @@ package dataaccess;
 
 import chess.ChessGame;
 import chess.InvalidMoveException;
-import exception.UnauthorizedException;
+import sharedexception.UnauthorizedException;
 import model.GameData;
 
 import java.util.List;
+import java.util.Objects;
 
 public interface GameDAO {
     GameData createGame(String gameName) throws DataAccessException;
@@ -36,5 +37,23 @@ public interface GameDAO {
         }
 
         return new String[]{newWhiteUsername, newBlackUsername};
+    }
+
+    default GameData getNewGameData(String username, GameData oldGame) {
+        // Find usernames to make null
+        String whiteUsername = oldGame.whiteUsername();
+        String blackUsername = oldGame.blackUsername();
+        GameData newGameData = oldGame;
+        if (Objects.equals(whiteUsername, username) && Objects.equals(blackUsername, username)) {
+            newGameData = new GameData(oldGame.gameID(), null, null,
+                    oldGame.gameName(), oldGame.game());
+        } else if (Objects.equals(whiteUsername, username)) {
+            newGameData = new GameData(oldGame.gameID(), null, blackUsername,
+                    oldGame.gameName(), oldGame.game());
+        } else if (Objects.equals(blackUsername, username)) {
+            newGameData = new GameData(oldGame.gameID(), whiteUsername, null,
+                    oldGame.gameName(), oldGame.game());
+        }
+        return newGameData;
     }
 }

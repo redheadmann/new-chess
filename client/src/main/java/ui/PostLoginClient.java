@@ -4,7 +4,7 @@ import chess.ChessBoard;
 import chess.ChessGame;
 import chess.ChessPiece;
 import chess.ChessPosition;
-import exception.ResponseException;
+import sharedexception.ResponseException;
 import serverfacade.ServerFacade;
 import records.GameRecords;
 

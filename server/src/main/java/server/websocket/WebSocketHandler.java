@@ -6,7 +6,7 @@ import chess.GameState;
 import chess.InvalidMoveException;
 import com.google.gson.Gson;
 import dataaccess.*;
-import exception.UnauthorizedException;
+import sharedexception.UnauthorizedException;
 import model.AuthData;
 import model.GameData;
 import org.eclipse.jetty.websocket.api.Session;

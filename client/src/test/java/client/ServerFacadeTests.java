@@ -1,7 +1,6 @@
 package client;
 
-import chess.ChessGame;
-import exception.ResponseException;
+import sharedexception.ResponseException;
 import org.junit.jupiter.api.*;
 import passoff.model.*;
 import server.Server;
@@ -9,7 +8,6 @@ import serverfacade.ServerFacade;
 import records.GameRecords;
 import records.UserRecords;
 
-import java.net.HttpURLConnection;
 import java.util.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)

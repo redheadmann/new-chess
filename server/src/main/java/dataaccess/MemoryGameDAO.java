@@ -1,7 +1,7 @@
 package dataaccess;
 
 import chess.ChessGame;
-import exception.UnauthorizedException;
+import sharedexception.UnauthorizedException;
 import model.GameData;
 
 import java.util.*;
@@ -93,22 +93,10 @@ public class MemoryGameDAO implements  GameDAO {
         // Copy old game data
         GameData oldGame = this.getGame(gameID);
 
-        // Find usernames to make null
-        String whiteUsername = oldGame.whiteUsername();
-        String blackUsername = oldGame.blackUsername();
-        GameData newGameData = oldGame;
-        if (Objects.equals(whiteUsername, username) && Objects.equals(blackUsername, username)) {
-            newGameData = new GameData(oldGame.gameID(), null, null,
-                        oldGame.gameName(), oldGame.game());
-        } else if (Objects.equals(whiteUsername, username)) {
-            newGameData = new GameData(oldGame.gameID(), null, blackUsername,
-                    oldGame.gameName(), oldGame.game());
-        } else if (Objects.equals(blackUsername, username)) {
-            newGameData = new GameData(oldGame.gameID(), whiteUsername, null,
-                    oldGame.gameName(), oldGame.game());
-        }
+        GameData newGameData = getNewGameData(username, oldGame);
 
         // Insert into old position
         data.put(gameID, newGameData);
     }
+
 }

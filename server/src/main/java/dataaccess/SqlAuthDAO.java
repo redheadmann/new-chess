@@ -1,11 +1,10 @@
 package dataaccess;
 
-import exception.UnauthorizedException;
+import sharedexception.UnauthorizedException;
 import model.AuthData;
 
 import com.google.gson.Gson;
 
-import javax.xml.crypto.Data;
 import java.sql.SQLException;
 import java.util.UUID;
 

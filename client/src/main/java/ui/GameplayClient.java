@@ -1,11 +1,7 @@
 package ui;
 
-import chess.ChessBoard;
-import chess.ChessGame;
 import chess.ChessPiece;
-import chess.ChessPosition;
-import exception.ResponseException;
-import records.GameRecords;
+import sharedexception.ResponseException;
 import serverfacade.ServerFacade;
 
 import java.util.Arrays;
@@ -13,7 +9,6 @@ import java.util.HashMap;
 
 import static ui.EscapeSequences.*;
 import static ui.EscapeSequences.SET_TEXT_COLOR_WHITE;
-import static ui.Repl.LOGOUT_MESSAGE;
 
 public class GameplayClient {
 

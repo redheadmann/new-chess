@@ -1,11 +1,9 @@
 package handler;
 import dataaccess.AuthDAO;
 import dataaccess.DataAccessException;
-import exception.UnauthorizedException;
+import sharedexception.UnauthorizedException;
 import service.Result;
 import spark.*;
-
-import java.util.Objects;
 
 abstract class Handler {
     private final AuthDAO authDAO;
