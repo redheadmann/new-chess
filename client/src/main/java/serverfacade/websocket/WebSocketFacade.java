@@ -3,6 +3,7 @@ package serverfacade.websocket;
 import com.google.gson.Gson;
 import repl.Repl;
 import sharedexception.ResponseException;
+import ui.GameplayClient;
 
 import javax.websocket.*;
 import java.io.IOException;
@@ -13,10 +14,10 @@ import java.net.URISyntaxException;
 public class WebSocketFacade extends Endpoint {
 
     Session session;
-    Repl notificationHandler;
+    GameplayClient notificationHandler;
 
 
-    public WebSocketFacade(String url, Repl repl) throws ResponseException {
+    public WebSocketFacade(String url, GameplayClient repl) throws ResponseException {
         try {
             // Create new url with ws extension
             url = url.replace("http", "ws");
@@ -28,13 +29,7 @@ public class WebSocketFacade extends Endpoint {
             this.session = container.connectToServer(this, socketURI);
 
             //set message handler
-            this.session.addMessageHandler(new MessageHandler.Whole<String>() {
-                @Override
-                public void onMessage(String message) {
-                    Notification notification = new Gson().fromJson(message, Notification.class);
-                    repl.notify(notification);
-                }
-            });
+            this.session.addMessageHandler(new NotificationMessageHandler(repl));
         } catch (DeploymentException | IOException | URISyntaxException ex) {
             throw new ResponseException(500, ex.getMessage());
         }

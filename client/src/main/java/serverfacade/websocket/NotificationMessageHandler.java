@@ -1,20 +1,28 @@
 package serverfacade.websocket;
 
 import com.google.gson.Gson;
-import repl.Repl;
+import ui.GameplayClient;
+import websocket.deserializers.MessageDeserializer;
+import websocket.messages.ErrorMessage;
+import websocket.messages.ServerMessage;
 
 import javax.websocket.MessageHandler;
 
 public class NotificationMessageHandler implements MessageHandler.Whole<String> {
-    private final Repl repl;
-    private final Gson gson = new Gson();
+    private final GameplayClient client;
+    private final Gson serializer = MessageDeserializer.createSerializer();
 
-    public NotificationMessageHandler(Repl repl) {
-        this.repl = repl;
+    public NotificationMessageHandler(GameplayClient client) {
+        this.client = client;
     }
 
     @Override
-    public void onMessage(String s) {
-
+    public void onMessage(String message) {
+        try {
+            ServerMessage serverMessage = serializer.fromJson(message, ServerMessage.class);
+            client.notify(serverMessage);
+        } catch (Exception ex) {
+            client.notify(new ErrorMessage(ex.getMessage()));
+        }
     }
 }

@@ -1,8 +1,12 @@
 package ui;
 
 import chess.ChessPiece;
+import serverfacade.websocket.ServerMessageObserver;
+import serverfacade.websocket.WebSocketFacade;
 import sharedexception.ResponseException;
 import serverfacade.ServerFacade;
+import websocket.messages.NotificationMessage;
+import websocket.messages.ServerMessage;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -10,13 +14,13 @@ import java.util.HashMap;
 import static ui.EscapeSequences.*;
 import static ui.EscapeSequences.SET_TEXT_COLOR_WHITE;
 
-public class GameplayClient implements Client {
+public class GameplayClient implements Client, ServerMessageObserver {
 
 
     // These determine what game a user is accessing
     private HashMap<Integer, Integer> gameMap = new HashMap<>();
 
-    private final ServerFacade server;
+    private final WebSocketFacade server;
     private String authToken = null;
 
 
@@ -24,8 +28,8 @@ public class GameplayClient implements Client {
     HashMap<ChessPiece.PieceType, String> blackMap = new HashMap<>();
 
 
-    public GameplayClient(String serverUrl) {
-        server = new ServerFacade(serverUrl);
+    public GameplayClient(String serverUrl) throws ResponseException {
+        server = new WebSocketFacade(serverUrl, this);
 
         createPieceMap(whiteMap, blackMap);
     }
@@ -39,11 +43,11 @@ public class GameplayClient implements Client {
             }
             String[] params = Arrays.copyOfRange(tokens, 1, tokens.length);
             return switch (cmd) {
-                case "redraw" -> createGame(params);
-                case "leave" -> listGames();
-                case "move" -> joinGame(params);
-                case "resign" -> observe(params);
-                case "highlight" -> logout(params);
+                case "redraw" -> redraw(params);
+                case "leave" -> leaveGame();
+                case "move" -> movePiece(params);
+                case "resign" -> resign(params);
+                case "highlight" -> highlightMoves(params);
                 default -> help();
             };
         } catch (ResponseException ex) {
@@ -55,24 +59,24 @@ public class GameplayClient implements Client {
         this.authToken = authToken;
     }
 
-    public String createGame(String... params) throws ResponseException{
+    public String redraw(String... params) throws ResponseException{
         return "Not implemented";
     }
 
-    public String listGames(String... params) throws ResponseException{
+    public String leaveGame(String... params) throws ResponseException{
         return "Not implemented";
     }
 
-    public String joinGame(String... params) throws ResponseException{
+    public String movePiece(String... params) throws ResponseException{
         return "Not implemented";
     }
 
-    public String observe(String... params) throws ResponseException{
+    public String resign(String... params) throws ResponseException{
         return "Not implemented";
     }
 
 
-    public String logout(String... params) throws ResponseException{
+    public String highlightMoves(String... params) throws ResponseException{
         return "Not implemented";
     }
 
@@ -91,5 +95,10 @@ public class GameplayClient implements Client {
                 SET_TEXT_COLOR_WHITE + " - possible moves\n" +
                 SET_TEXT_COLOR_BLUE + "help" +
                 SET_TEXT_COLOR_WHITE + " - with possible commands\n";
+    }
+
+    @Override
+    public void notify(ServerMessage message) {
+
     }
 }
