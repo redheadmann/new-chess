@@ -18,18 +18,18 @@ public interface GameDAO {
     void leaveGame(String username, int gameID) throws DataAccessException, UnauthorizedException;
 
     default String[] calculateUsernames(String username, ChessGame.TeamColor playerColor,
-                                        GameData oldGame) throws DataAccessException{
+                                        GameData oldGame) throws DataAccessException {
         // update correct username based on player color, ensuring name is not taken
         String newWhiteUsername;
         String newBlackUsername;
         if (playerColor == ChessGame.TeamColor.WHITE) {
-            if (oldGame.whiteUsername() != null) {
+            if (oldGame.whiteUsername() != null && !username.equals(oldGame.whiteUsername())) {
                 throw new DataAccessException("Error: already taken");
             }
             newWhiteUsername = username;
             newBlackUsername = oldGame.blackUsername();
         } else {
-            if (oldGame.blackUsername() != null) {
+            if (oldGame.blackUsername() != null && !username.equals(oldGame.blackUsername())) {
                 throw new DataAccessException("Error: already taken");
             }
             newWhiteUsername = oldGame.whiteUsername();
