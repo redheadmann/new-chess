@@ -109,7 +109,7 @@ public class Repl implements ServerMessageObserver {
         // Update the game
         this.currentGame = game;
         // Print the game
-        String board = drawBoard(game.getBoard(), playerColor);
+        String board = drawBoard(game.getBoard(), playerColor, null, null);
         System.out.print(board + SET_BG_COLOR_DARK_GREY);
     }
 
@@ -147,6 +147,10 @@ public class Repl implements ServerMessageObserver {
 
     public void setPlayerColor(ChessGame.TeamColor playerColor) {
         this.playerColor = playerColor;
+    }
+
+    public ChessGame.TeamColor getPlayerColor() {
+        return playerColor;
     }
 
     public ChessGame getCurrentGame() {

@@ -1,17 +1,18 @@
 package ui;
 
+import chess.ChessGame;
 import chess.ChessMove;
 import chess.ChessPiece;
 import chess.ChessPosition;
 import repl.Repl;
 import repl.State;
-import serverfacade.ServerFacade;
 import serverfacade.websocket.ServerMessageObserver;
 import serverfacade.websocket.WebSocketFacade;
 import sharedexception.ResponseException;
 import websocket.messages.ServerMessage;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 
 import static ui.BoardDrawer.createFileMap;
@@ -20,7 +21,6 @@ import static ui.EscapeSequences.SET_TEXT_COLOR_WHITE;
 
 public class GameplayClient implements Client, ServerMessageObserver {
 
-    private ServerFacade server;
     private WebSocketFacade ws;
     private String authToken;
     private Integer gameID;
@@ -33,7 +33,6 @@ public class GameplayClient implements Client, ServerMessageObserver {
     }
 
     public String eval(String input) {
-        server = repl.getServer();
         ws = repl.getWs();
         authToken = repl.getAuthToken();
         gameID = repl.getGameID();
@@ -55,7 +54,9 @@ public class GameplayClient implements Client, ServerMessageObserver {
     }
 
     public String redraw() {
-        return "Not implemented";
+        // Get chessboard from the repl object
+        ChessGame game = repl.getCurrentGame();
+        return BoardDrawer.drawBoard(game.getBoard(), repl.getPlayerColor(), null, null);
     }
 
     public String leaveGame() throws ResponseException {
@@ -124,8 +125,22 @@ public class GameplayClient implements Client, ServerMessageObserver {
 
 
     public String highlightMoves(String... params) throws ResponseException{
+        if (params.length == 1) {
+            try {
+                if (!isValidChessPosition(params[0])) {
+                    throw new ResponseException(500, "Expected: highlight <POSITION> (ex: h8)");
+                }
+                ChessPosition position = parsePosition(params[0]);
 
-        return "Not implemented";
+                // Get game and find valid moves
+                ChessGame game = repl.getCurrentGame();
+                Collection<ChessMove> moves = game.validMoves(position);
+
+                return "";
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        throw new ResponseException(500, "Expected: highlight <POSITION> (ex: h8)");
     }
 
 

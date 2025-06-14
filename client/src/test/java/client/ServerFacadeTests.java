@@ -55,6 +55,13 @@ public class ServerFacadeTests {
 
     @AfterAll
     static void stopServer() {
+        // Delete all databases
+        try {
+            serverFacade.clear();
+        } catch (ResponseException e) {
+            throw new RuntimeException(e);
+        }
+        // Stop server
         server.stop();
     }
 

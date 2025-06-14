@@ -1,10 +1,9 @@
 package ui;
 
-import chess.ChessBoard;
-import chess.ChessGame;
-import chess.ChessPiece;
-import chess.ChessPosition;
+import chess.*;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 
 import static ui.EscapeSequences.*;
@@ -58,12 +57,24 @@ public abstract class BoardDrawer {
         return color == Color.WHITE ? Color.BLACK : Color.WHITE;
     }
 
-    public static void setDarkSquare(StringBuilder str) {
-        str.append(SET_BG_COLOR_DARK_GREEN);
+    public static void setDarkSquare(StringBuilder str, ArrayList<ChessPosition> endPositions, ChessPosition myPosition, ChessPosition currentPosition) {
+        if (currentPosition == myPosition) {
+            str.append(SET_BG_COLOR_YELLOW);
+        } else if (endPositions.contains(currentPosition)) {
+            str.append(SET_BG_COLOR_DARK_GREEN);
+        } else {
+            str.append(SET_BG_COLOR_BLUE);
+        }
     }
 
-    public static void setLightSquare(StringBuilder str) {
-        str.append(SET_BG_COLOR_WHITE);
+    public static void setLightSquare(StringBuilder str, ArrayList<ChessPosition> endPositions, ChessPosition myPosition, ChessPosition currentPosition) {
+        if (currentPosition == myPosition) {
+            str.append(SET_BG_COLOR_YELLOW);
+        } else if (endPositions.contains(currentPosition)) {
+            str.append(SET_BG_COLOR_GREEN);
+        } else {
+            str.append(SET_BG_COLOR_WHITE);
+        }
     }
 
     public static void drawPieceOrNull(StringBuilder str, ChessBoard board, int row, int col) {
@@ -79,7 +90,7 @@ public abstract class BoardDrawer {
         }
     }
 
-    public static String drawRow(ChessBoard board, Integer row, Integer direction, Color leftColor) {
+    public static String drawRow(ChessBoard board, Integer row, Integer direction, Color leftColor, ArrayList<ChessPosition> endPositions, ChessPosition myPosition) {
         // 0 for white perspective, 1 for black
         StringBuilder str = new StringBuilder();
 
@@ -94,23 +105,26 @@ public abstract class BoardDrawer {
             color = Color.BLACK;
         }
 
+        ChessPosition currentPosition;
         // Go through row
         if (direction == 0) {
             for (int col = 1; col <= 8; col++) {
+                currentPosition = new ChessPosition(row, col);
                 if (color == Color.WHITE) {
-                    setLightSquare(str);
+                    setLightSquare(str, endPositions, myPosition, currentPosition);
                 } else {
-                    setDarkSquare(str);
+                    setDarkSquare(str, endPositions, myPosition, currentPosition);
                 }
                 drawPieceOrNull(str, board, row, col);
                 color = updateColor(color);
             }
         } else {
             for (int col = 8; col >= 1; col--) {
+                currentPosition = new ChessPosition(row, col);
                 if (color == Color.WHITE) {
-                    setLightSquare(str);
+                    setLightSquare(str, endPositions, myPosition, currentPosition);
                 } else {
-                    setDarkSquare(str);
+                    setDarkSquare(str, endPositions, myPosition, currentPosition);
                 }
                 drawPieceOrNull(str, board, row, col);
                 color = updateColor(color);
@@ -122,9 +136,18 @@ public abstract class BoardDrawer {
         return str.toString();
     }
 
-    public static String drawBoard(ChessBoard board, ChessGame.TeamColor color) {
+
+    public static String drawBoard(ChessBoard board, ChessGame.TeamColor color, Collection<ChessMove> moves, ChessPosition myPosition) {
         // Set direction
         int direction = setDirection(color);
+
+        // If moves is not null
+        ArrayList<ChessPosition> endPositions = null;
+        if (moves != null) {
+            for (ChessMove move : moves) {
+                endPositions.add(move.getEndPosition());
+            }
+        }
 
         StringBuilder str = new StringBuilder();
 
@@ -134,9 +157,9 @@ public abstract class BoardDrawer {
             for (int row = 8; row >= 1; row--) {
                 // Even rows have white on far left
                 if (row % 2 == 0) {
-                    str.append(drawRow(board, row, 0, Color.WHITE));
+                    str.append(drawRow(board, row, 0, Color.WHITE, endPositions, myPosition));
                 } else {
-                    str.append(drawRow(board, row, 0, Color.BLACK));
+                    str.append(drawRow(board, row, 0, Color.BLACK, endPositions, myPosition));
                 }
                 str.append("\n");
             }
@@ -146,9 +169,9 @@ public abstract class BoardDrawer {
             for (int row = 1; row <= 8; row++) {
                 // Even rows have white on far left
                 if (row % 2 == 0) {
-                    str.append(drawRow(board, row, 1, Color.WHITE));
+                    str.append(drawRow(board, row, 1, Color.WHITE, endPositions, myPosition));
                 } else {
-                    str.append(drawRow(board, row, 1, Color.BLACK));
+                    str.append(drawRow(board, row, 1, Color.BLACK, endPositions, myPosition));
                 }
                 str.append("\n");
             }

@@ -1,9 +1,6 @@
 package server.websocket;
 
-import chess.ChessGame;
-import chess.ChessMove;
-import chess.GameState;
-import chess.InvalidMoveException;
+import chess.*;
 import com.google.gson.Gson;
 import dataaccess.*;
 import sharedexception.UnauthorizedException;
@@ -150,6 +147,18 @@ public class WebSocketHandler {
                 ConnectionManager.SendType.EXCLUDE_ONE);
     }
 
+
+    private char makeChar(int i) {
+        return (char) ('a' + (i - 1));
+    }
+    private String makeMoveString(ChessMove move) {
+        ChessPosition startPosition = move.getStartPosition();
+        ChessPosition endPosition = move.getEndPosition();
+        return String.format("%c%d to %c%d",
+                makeChar(startPosition.getColumn()), startPosition.getRow(),
+                makeChar(endPosition.getColumn()), endPosition.getRow());
+    }
+
     private void makeMove(Session session, String username, MakeMoveCommand command)
             throws DataAccessException, InvalidMoveException {
         // Get gameID and chess move
@@ -180,7 +189,7 @@ public class WebSocketHandler {
                 new LoadGameMessage(game), ConnectionManager.SendType.ALL);
         // send notification telling what move was made
         connections.broadcast(gameID, username,
-                new NotificationMessage(username + " made move " + move.toString()),
+                new NotificationMessage(username + " made move " + makeMoveString(move)),
                 ConnectionManager.SendType.EXCLUDE_ONE);
         // Send notification if in check, or game is over for checkmate or stalemate
         sendGameOverMessages(gameID, color, username, game);

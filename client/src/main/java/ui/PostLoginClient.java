@@ -105,8 +105,11 @@ public class PostLoginClient implements Client, ServerMessageObserver {
                 if (!color.equals("WHITE") && !color.equals("BLACK")) {
                     throw new ResponseException(400, "Expected: join <ID> [WHITE|BLACK]");
                 }
+
+                // Set team color
                 ChessGame.TeamColor playerColor = color.equals("WHITE") ?
                         ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK;
+                repl.setPlayerColor(playerColor);
 
                 // Make sure gameID is not null and join the game
                 Integer gameID = gameMap.get(gameNum);
@@ -142,6 +145,8 @@ public class PostLoginClient implements Client, ServerMessageObserver {
                     throw new ResponseException(400, "Invalid ID");
                 }
 
+                // update repl playerColor
+                repl.setPlayerColor(ChessGame.TeamColor.WHITE);
 
                 // Send connect command via websocket
                 WebSocketFacade ws = new WebSocketFacade(server.getUrl(), repl);

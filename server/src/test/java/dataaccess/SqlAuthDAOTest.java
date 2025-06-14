@@ -69,7 +69,7 @@ class SqlAuthDAOTest {
     void failGetAuth() {
         try {
             addAuth();
-            Assertions.assertThrows(DataAccessException.class, () -> {
+            Assertions.assertThrows(UnauthorizedException.class, () -> {
                 authDAO.getAuth("failure");
             });
         } catch (DataAccessException | UnauthorizedException e) {
@@ -89,7 +89,7 @@ class SqlAuthDAOTest {
 
             // remove and check for user again
             authDAO.deleteAuth(user.authToken());
-            Assertions.assertThrows(DataAccessException.class, () -> {
+            Assertions.assertThrows(UnauthorizedException.class, () -> {
                 authDAO.getAuth(user.authToken());
             });
         } catch (DataAccessException | UnauthorizedException e) {
@@ -126,7 +126,7 @@ class SqlAuthDAOTest {
 
             authDAO.clear();
 
-            Assertions.assertThrows(DataAccessException.class, () -> {
+            Assertions.assertThrows(UnauthorizedException.class, () -> {
                 authDAO.getAuth(auth1.authToken()); // Invalid gameID
             });
         } catch (DataAccessException | UnauthorizedException e) {
