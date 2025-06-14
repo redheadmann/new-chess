@@ -1,11 +1,8 @@
 package repl;
 
-//import client.websocket.NotificationHandler;
-//import webSocketMessages.Notification;
 
 import chess.ChessGame;
 import serverfacade.ServerFacade;
-import serverfacade.websocket.NotificationMessageHandler;
 import serverfacade.websocket.ServerMessageObserver;
 import serverfacade.websocket.WebSocketFacade;
 import ui.GameplayClient;
@@ -13,7 +10,6 @@ import ui.PostLoginClient;
 import ui.PreLoginClient;
 import websocket.messages.ServerMessage;
 
-import java.util.Objects;
 import java.util.Scanner;
 
 import static ui.EscapeSequences.*;
@@ -27,7 +23,7 @@ public class Repl implements ServerMessageObserver {
 
     private Integer gameID = null;
     private String authToken = null;
-    private ChessGame.TeamColor playerColor;
+    private ChessGame.TeamColor playerColor = ChessGame.TeamColor.WHITE;
     private ServerFacade server;
     private WebSocketFacade ws;
 
@@ -89,7 +85,27 @@ public class Repl implements ServerMessageObserver {
     }
 
     public void notify(ServerMessage message) {
+        switch (message.getServerMessageType()) {
+            case LOAD_GAME -> {
+            }
+            case ERROR -> {
+            }
+            case NOTIFICATION -> {
+            }
+        }
+    }
 
+    public void displayError(String message) {
+        System.out.print(message);
+    }
+
+    public void loadGame(ChessGame game) {
+        System.out.print("This would show you the game");
+
+    }
+
+    public void displayNotification(String message) {
+        System.out.print(message);
     }
 
     public Integer getGameID() {

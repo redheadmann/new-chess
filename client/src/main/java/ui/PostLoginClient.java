@@ -1,9 +1,6 @@
 package ui;
 
-import chess.ChessBoard;
 import chess.ChessGame;
-import chess.ChessPiece;
-import chess.ChessPosition;
 import repl.Repl;
 import repl.State;
 import serverfacade.websocket.ServerMessageObserver;
@@ -20,10 +17,10 @@ import static ui.EscapeSequences.*;
 
 public class PostLoginClient implements Client, ServerMessageObserver {
     // This determines what game a user is accessing
-    private HashMap<Integer, Integer> gameMap = new HashMap<>();
+    private final HashMap<Integer, Integer> gameMap = new HashMap<>();
 
     private final ServerFacade server;
-    private String authToken = null;
+    private String authToken;
     private final Repl repl;
 
     public PostLoginClient(Repl repl) {
@@ -57,7 +54,7 @@ public class PostLoginClient implements Client, ServerMessageObserver {
         if (params.length == 1) {
             try {
                 String gameName = params[0];
-                GameRecords.CreateResult result = server.createGame(authToken, gameName);
+                server.createGame(authToken, gameName);
 
                 return "success";
             } catch (NumberFormatException ignored) {
@@ -91,7 +88,7 @@ public class PostLoginClient implements Client, ServerMessageObserver {
             } catch (NumberFormatException ignored) {
             }
         }
-        throw new ResponseException(400, "Expected: create <NAME>");
+        throw new ResponseException(400, "Expected: list");
 
     }
 
@@ -113,7 +110,7 @@ public class PostLoginClient implements Client, ServerMessageObserver {
                 if (gameID == null) {
                     throw new ResponseException(400, "Invalid ID");
                 }
-                server.joinGame(authToken, color, gameID);
+                server.joinGame(authToken, playerColor, gameID);
 
                 // Send connect command via websocket
                 WebSocketFacade ws = new WebSocketFacade(server.getUrl(), repl);
@@ -143,14 +140,20 @@ public class PostLoginClient implements Client, ServerMessageObserver {
                     throw new ResponseException(400, "Invalid ID");
                 }
 
-                // I do not yet have an observe function
 
-                return drawBoard(Color.WHITE);
+                // Send connect command via websocket
+                WebSocketFacade ws = new WebSocketFacade(server.getUrl(), repl);
+                repl.setWs(ws);
+
+                // Update repl state and gameID
+                repl.setState(State.IN_GAME);
+                repl.setGameID(gameID);
+                return null;
             } catch (NumberFormatException ignored) {
             }
         }
 
-        throw new ResponseException(400, "Expected: join <ID> [WHITE|BLACK]");
+        throw new ResponseException(400, "Expected: observe");
     }
 
 

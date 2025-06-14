@@ -1,7 +1,10 @@
 package ui;
 
+import chess.ChessMove;
 import chess.ChessPiece;
+import chess.ChessPosition;
 import repl.Repl;
+import repl.State;
 import serverfacade.ServerFacade;
 import serverfacade.websocket.ServerMessageObserver;
 import serverfacade.websocket.WebSocketFacade;
@@ -11,19 +14,17 @@ import websocket.messages.ServerMessage;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import static ui.BoardDrawer.createFileMap;
 import static ui.EscapeSequences.*;
 import static ui.EscapeSequences.SET_TEXT_COLOR_WHITE;
 
 public class GameplayClient implements Client, ServerMessageObserver {
 
-    // These determine what game a user is accessing
-    private HashMap<Integer, Integer> gameMap = new HashMap<>();
-
     private final ServerFacade server;
     private final WebSocketFacade ws;
-    private String authToken;
-    private Integer gameID;
-    private Repl repl;
+    private final String authToken;
+    private final Integer gameID;
+    private final Repl repl;
 
 
     public GameplayClient(Repl repl) {
@@ -43,10 +44,10 @@ public class GameplayClient implements Client, ServerMessageObserver {
             }
             String[] params = Arrays.copyOfRange(tokens, 1, tokens.length);
             return switch (cmd) {
-                case "redraw" -> redraw(params);
+                case "redraw" -> redraw();
                 case "leave" -> leaveGame();
                 case "move" -> movePiece(params);
-                case "resign" -> resign(params);
+                case "resign" -> resign();
                 case "highlight" -> highlightMoves(params);
                 default -> help();
             };
@@ -55,28 +56,76 @@ public class GameplayClient implements Client, ServerMessageObserver {
         }
     }
 
-    public void setAuthToken(String authToken) {
-        this.authToken = authToken;
-    }
-
-    public String redraw(String... params) throws ResponseException{
+    public String redraw() {
         return "Not implemented";
     }
 
-    public String leaveGame(String... params) throws ResponseException{
-        return "Not implemented";
+    public String leaveGame() throws ResponseException {
+        // disconnects websocket session
+        ws.leave(authToken, gameID);
+        // delete websocket connection and update repl state and game ID
+        repl.setWs(null);
+        repl.setState(State.SIGNED_IN);
+        repl.setGameID(null);
+        return "you left the game";
     }
+
+    private boolean isValidChessPosition(String position) {
+        // With my knowledge of regex, we will be okay
+        return position != null && position.matches("^[a-h][1-8]$");
+    }
+
+    private ChessPosition parsePosition(String input) {
+        // Create map from letters to numbers
+        HashMap<Character, Integer> map = createFileMap();
+
+        char[] chars = input.toCharArray();
+        int col = map.get(chars[0]);
+        int row = Integer.parseInt(String.valueOf(chars[1]));
+        return new ChessPosition(row, col);
+    }
+
+    private final String moveResponseString = "Expected: move <START_POSITION> <END_POSITION> | <PROMOTION_TYPE> " +
+            "(examples: e4 e5, h7 h8 QUEEN) - specify castling with the king's move";
 
     public String movePiece(String... params) throws ResponseException{
-        return "Not implemented";
+        if (params.length == 2 || params.length == 3) {
+            try {
+                ChessMove move = createChessMove(params, moveResponseString);
+
+                ws.makeMove(authToken, gameID, move);
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        throw new ResponseException(500, moveResponseString);
     }
 
-    public String resign(String... params) throws ResponseException{
-        return "Not implemented";
+    private ChessMove createChessMove(String[] params, String moveResponseString) throws ResponseException {
+        // Check each input
+        if (!isValidChessPosition(params[0]) || !isValidChessPosition(params[1])) {
+            throw new ResponseException(500, moveResponseString);
+        }
+        ChessPiece.PieceType promotionType= null;
+        if (params.length == 3) {
+            // throws IllegalArgumentException
+            promotionType = ChessPiece.PieceType.valueOf(params[2].toUpperCase());
+        }
+        // return true;
+        // Create the move
+        ChessPosition start = parsePosition(params[0]);
+        ChessPosition end = parsePosition(params[1]);
+        return new ChessMove(start, end, promotionType);
+    }
+
+    public String resign() throws ResponseException {
+        ws.resign(authToken, gameID);
+
+        return "You resigned";
     }
 
 
     public String highlightMoves(String... params) throws ResponseException{
+
         return "Not implemented";
     }
 

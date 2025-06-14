@@ -19,6 +19,19 @@ abstract class BoardDrawer {
         createPieceMap(whiteMap, blackMap);
     }
 
+    public static HashMap<Character, Integer> createFileMap() {
+        HashMap<Character, Integer> fileMap = new HashMap<>();
+        fileMap.put('a', 1);
+        fileMap.put('b', 2);
+        fileMap.put('c', 3);
+        fileMap.put('d', 4);
+        fileMap.put('e', 5);
+        fileMap.put('f', 6);
+        fileMap.put('g', 7);
+        fileMap.put('h', 8);
+        return fileMap;
+    }
+
     public void createPieceMap(HashMap<ChessPiece.PieceType, String> whiteMap,
                                HashMap<ChessPiece.PieceType, String> blackMap) {
         whiteMap.put(ChessPiece.PieceType.KING, WHITE_KING);
