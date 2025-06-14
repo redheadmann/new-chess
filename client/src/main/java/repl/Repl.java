@@ -8,10 +8,14 @@ import serverfacade.websocket.WebSocketFacade;
 import ui.GameplayClient;
 import ui.PostLoginClient;
 import ui.PreLoginClient;
+import websocket.messages.ErrorMessage;
+import websocket.messages.LoadGameMessage;
+import websocket.messages.NotificationMessage;
 import websocket.messages.ServerMessage;
 
 import java.util.Scanner;
 
+import static ui.BoardDrawer.drawBoard;
 import static ui.EscapeSequences.*;
 
 public class Repl implements ServerMessageObserver {
@@ -24,6 +28,8 @@ public class Repl implements ServerMessageObserver {
     private Integer gameID = null;
     private String authToken = null;
     private ChessGame.TeamColor playerColor = ChessGame.TeamColor.WHITE;
+    private ChessGame currentGame;
+
     private ServerFacade server;
     private WebSocketFacade ws;
 
@@ -47,7 +53,7 @@ public class Repl implements ServerMessageObserver {
 
         Scanner scanner = new Scanner(System.in);
         String result = "";
-        while (!result.equals("quit")) {
+        while (!"quit".equals(result)) {
             printPrompt();
             String line = scanner.nextLine();
 
@@ -62,7 +68,8 @@ public class Repl implements ServerMessageObserver {
                         System.out.print(SET_TEXT_COLOR_BLUE + result);
                     }
                     case IN_GAME -> {
-                        System.out.print("Not yet implemented");
+                        result = gameplayClient.eval(line);
+                        System.out.print(SET_TEXT_COLOR_BLUE + result);
                     }
                 }
             } catch (Throwable e) {
@@ -85,14 +92,13 @@ public class Repl implements ServerMessageObserver {
     }
 
     public void notify(ServerMessage message) {
+        System.out.print("\n");
         switch (message.getServerMessageType()) {
-            case LOAD_GAME -> {
-            }
-            case ERROR -> {
-            }
-            case NOTIFICATION -> {
-            }
+            case LOAD_GAME -> loadGame(((LoadGameMessage) message).getGame());
+            case ERROR -> displayError(((ErrorMessage) message).getErrorMessage());
+            case NOTIFICATION -> displayNotification(((NotificationMessage) message).getMessage());
         }
+        printPrompt();
     }
 
     public void displayError(String message) {
@@ -100,8 +106,11 @@ public class Repl implements ServerMessageObserver {
     }
 
     public void loadGame(ChessGame game) {
-        System.out.print("This would show you the game");
-
+        // Update the game
+        this.currentGame = game;
+        // Print the game
+        String board = drawBoard(game.getBoard(), playerColor);
+        System.out.print(board + SET_BG_COLOR_DARK_GREY);
     }
 
     public void displayNotification(String message) {
@@ -138,5 +147,9 @@ public class Repl implements ServerMessageObserver {
 
     public void setPlayerColor(ChessGame.TeamColor playerColor) {
         this.playerColor = playerColor;
+    }
+
+    public ChessGame getCurrentGame() {
+        return currentGame;
     }
 }

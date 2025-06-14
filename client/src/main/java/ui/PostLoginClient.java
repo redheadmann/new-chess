@@ -8,6 +8,7 @@ import serverfacade.websocket.WebSocketFacade;
 import sharedexception.ResponseException;
 import serverfacade.ServerFacade;
 import records.GameRecords;
+import sharedexception.UnauthorizedException;
 import websocket.messages.ServerMessage;
 
 import java.util.Arrays;
@@ -19,22 +20,24 @@ public class PostLoginClient implements Client, ServerMessageObserver {
     // This determines what game a user is accessing
     private final HashMap<Integer, Integer> gameMap = new HashMap<>();
 
-    private final ServerFacade server;
+    private ServerFacade server;
     private String authToken;
     private final Repl repl;
 
     public PostLoginClient(Repl repl) {
-        server = repl.getServer();
-        authToken = repl.getAuthToken();
         this.repl = repl;
     }
 
     public String eval(String input) {
+        server = repl.getServer();
+        authToken = repl.getAuthToken();
         try {
             var tokens = input.split(" ");
             var cmd = (tokens.length > 0) ? tokens[0] : "help";
             if (authToken == null) {
-                return "";
+                repl.setState(State.SIGNED_OUT);
+                repl.setAuthToken(null);
+                throw new UnauthorizedException("Authtoken is invalid.");
             }
             String[] params = Arrays.copyOfRange(tokens, 1, tokens.length);
             return switch (cmd) {
@@ -115,13 +118,12 @@ public class PostLoginClient implements Client, ServerMessageObserver {
                 // Send connect command via websocket
                 WebSocketFacade ws = new WebSocketFacade(server.getUrl(), repl);
                 repl.setWs(ws);
-                // TODO:: send the command, which will automatically draw the board
-                // upon receiving a notification in return
+                ws.connect(authToken, gameID);
 
                 // Update repl state and gameID
                 repl.setState(State.IN_GAME);
                 repl.setGameID(gameID);
-                return null;
+                return "";
             } catch (NumberFormatException ignored) {
             }
         }
@@ -165,6 +167,7 @@ public class PostLoginClient implements Client, ServerMessageObserver {
                 // update repl state and delete authToken from repl
                 repl.setState(State.SIGNED_OUT);
                 repl.setAuthToken(null);
+                return "";
             } catch (NumberFormatException ignored) {
             }
         }

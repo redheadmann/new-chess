@@ -10,12 +10,12 @@ import java.util.HashMap;
 import static ui.EscapeSequences.*;
 import static ui.EscapeSequences.BLACK_HEADER;
 
-abstract class BoardDrawer {
+public abstract class BoardDrawer {
 
-    HashMap<ChessPiece.PieceType, String> whiteMap = new HashMap<>();
-    HashMap<ChessPiece.PieceType, String> blackMap = new HashMap<>();
+    static HashMap<ChessPiece.PieceType, String> whiteMap = new HashMap<>();
+    static HashMap<ChessPiece.PieceType, String> blackMap = new HashMap<>();
 
-    public BoardDrawer() {
+    static {
         createPieceMap(whiteMap, blackMap);
     }
 
@@ -32,7 +32,7 @@ abstract class BoardDrawer {
         return fileMap;
     }
 
-    public void createPieceMap(HashMap<ChessPiece.PieceType, String> whiteMap,
+    static void createPieceMap(HashMap<ChessPiece.PieceType, String> whiteMap,
                                HashMap<ChessPiece.PieceType, String> blackMap) {
         whiteMap.put(ChessPiece.PieceType.KING, WHITE_KING);
         whiteMap.put(ChessPiece.PieceType.QUEEN, WHITE_QUEEN);
@@ -54,19 +54,19 @@ abstract class BoardDrawer {
         BLACK
     }
 
-    public Color updateColor(Color color) {
+    public static Color updateColor(Color color) {
         return color == Color.WHITE ? Color.BLACK : Color.WHITE;
     }
 
-    public void setDarkSquare(StringBuilder str) {
+    public static void setDarkSquare(StringBuilder str) {
         str.append(SET_BG_COLOR_DARK_GREEN);
     }
 
-    public void setLightSquare(StringBuilder str) {
+    public static void setLightSquare(StringBuilder str) {
         str.append(SET_BG_COLOR_WHITE);
     }
 
-    public void drawPieceOrNull(StringBuilder str, ChessBoard board, int row, int col) {
+    public static void drawPieceOrNull(StringBuilder str, ChessBoard board, int row, int col) {
         ChessPiece piece = board.getPiece(new ChessPosition(row, col));
         if (piece == null) {
             str.append(EMPTY);
@@ -79,7 +79,7 @@ abstract class BoardDrawer {
         }
     }
 
-    public String drawRow(ChessBoard board, Integer row, Integer direction, Color leftColor) {
+    public static String drawRow(ChessBoard board, Integer row, Integer direction, Color leftColor) {
         // 0 for white perspective, 1 for black
         StringBuilder str = new StringBuilder();
 
@@ -122,7 +122,7 @@ abstract class BoardDrawer {
         return str.toString();
     }
 
-    public String drawBoard(ChessBoard board, ChessGame.TeamColor color) {
+    public static String drawBoard(ChessBoard board, ChessGame.TeamColor color) {
         // Set direction
         int direction = setDirection(color);
 
@@ -158,7 +158,7 @@ abstract class BoardDrawer {
         return str.toString();
     }
 
-    public int setDirection(ChessGame.TeamColor color) {
+    public static int setDirection(ChessGame.TeamColor color) {
         // use a board object
         ChessBoard board = new ChessBoard();
         board.resetBoard();

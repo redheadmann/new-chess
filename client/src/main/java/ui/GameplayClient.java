@@ -20,28 +20,26 @@ import static ui.EscapeSequences.SET_TEXT_COLOR_WHITE;
 
 public class GameplayClient implements Client, ServerMessageObserver {
 
-    private final ServerFacade server;
-    private final WebSocketFacade ws;
-    private final String authToken;
-    private final Integer gameID;
+    private ServerFacade server;
+    private WebSocketFacade ws;
+    private String authToken;
+    private Integer gameID;
     private final Repl repl;
 
 
     public GameplayClient(Repl repl) {
-        server = repl.getServer();
-        ws = repl.getWs();
-        authToken = repl.getAuthToken();
-        gameID = repl.getGameID();
+
         this.repl = repl;
     }
 
     public String eval(String input) {
+        server = repl.getServer();
+        ws = repl.getWs();
+        authToken = repl.getAuthToken();
+        gameID = repl.getGameID();
         try {
             var tokens = input.split(" ");
             var cmd = (tokens.length > 0) ? tokens[0] : "help";
-            if (authToken == null) {
-                return "";
-            }
             String[] params = Arrays.copyOfRange(tokens, 1, tokens.length);
             return switch (cmd) {
                 case "redraw" -> redraw();
@@ -61,13 +59,13 @@ public class GameplayClient implements Client, ServerMessageObserver {
     }
 
     public String leaveGame() throws ResponseException {
-        // disconnects websocket session
-        ws.leave(authToken, gameID);
         // delete websocket connection and update repl state and game ID
-        repl.setWs(null);
         repl.setState(State.SIGNED_IN);
         repl.setGameID(null);
-        return "you left the game";
+        // disconnects websocket session
+        ws.leave(authToken, gameID);
+        repl.setWs(null);
+        return "You left the game";
     }
 
     private boolean isValidChessPosition(String position) {
@@ -94,6 +92,7 @@ public class GameplayClient implements Client, ServerMessageObserver {
                 ChessMove move = createChessMove(params, moveResponseString);
 
                 ws.makeMove(authToken, gameID, move);
+                return "";
             } catch (IllegalArgumentException ignored) {
             }
         }
@@ -120,7 +119,7 @@ public class GameplayClient implements Client, ServerMessageObserver {
     public String resign() throws ResponseException {
         ws.resign(authToken, gameID);
 
-        return "You resigned";
+        return "";
     }
 
 
@@ -132,7 +131,7 @@ public class GameplayClient implements Client, ServerMessageObserver {
 
     // Version of help message for post login
     public String help() {
-        return SET_TEXT_COLOR_BLUE + "redraw" +
+        return SET_TEXT_COLOR_BLUE + "\nredraw" +
                 SET_TEXT_COLOR_WHITE + " - the board\n" +
                 SET_TEXT_COLOR_BLUE + "leave" +
                 SET_TEXT_COLOR_WHITE + " - the game\n" +
