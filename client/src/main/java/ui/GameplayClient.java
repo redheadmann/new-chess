@@ -1,11 +1,11 @@
 package ui;
 
 import chess.ChessPiece;
+import repl.Repl;
+import serverfacade.ServerFacade;
 import serverfacade.websocket.ServerMessageObserver;
 import serverfacade.websocket.WebSocketFacade;
 import sharedexception.ResponseException;
-import serverfacade.ServerFacade;
-import websocket.messages.NotificationMessage;
 import websocket.messages.ServerMessage;
 
 import java.util.Arrays;
@@ -16,22 +16,22 @@ import static ui.EscapeSequences.SET_TEXT_COLOR_WHITE;
 
 public class GameplayClient implements Client, ServerMessageObserver {
 
-
     // These determine what game a user is accessing
     private HashMap<Integer, Integer> gameMap = new HashMap<>();
 
-    private final WebSocketFacade server;
-    private String authToken = null;
+    private final ServerFacade server;
+    private final WebSocketFacade ws;
+    private String authToken;
+    private Integer gameID;
+    private Repl repl;
 
 
-    HashMap<ChessPiece.PieceType, String> whiteMap = new HashMap<>();
-    HashMap<ChessPiece.PieceType, String> blackMap = new HashMap<>();
-
-
-    public GameplayClient(String serverUrl) throws ResponseException {
-        server = new WebSocketFacade(serverUrl, this);
-
-        createPieceMap(whiteMap, blackMap);
+    public GameplayClient(Repl repl) {
+        server = repl.getServer();
+        ws = repl.getWs();
+        authToken = repl.getAuthToken();
+        gameID = repl.getGameID();
+        this.repl = repl;
     }
 
     public String eval(String input) {
@@ -99,6 +99,6 @@ public class GameplayClient implements Client, ServerMessageObserver {
 
     @Override
     public void notify(ServerMessage message) {
-
+        repl.notify(message);
     }
 }

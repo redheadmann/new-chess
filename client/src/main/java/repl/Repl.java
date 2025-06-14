@@ -3,6 +3,12 @@ package repl;
 //import client.websocket.NotificationHandler;
 //import webSocketMessages.Notification;
 
+import chess.ChessGame;
+import serverfacade.ServerFacade;
+import serverfacade.websocket.NotificationMessageHandler;
+import serverfacade.websocket.ServerMessageObserver;
+import serverfacade.websocket.WebSocketFacade;
+import ui.GameplayClient;
 import ui.PostLoginClient;
 import ui.PreLoginClient;
 import websocket.messages.ServerMessage;
@@ -12,35 +18,36 @@ import java.util.Scanner;
 
 import static ui.EscapeSequences.*;
 
-public class Repl {
+public class Repl implements ServerMessageObserver {
     private final PostLoginClient postLoginClient;
     private final PreLoginClient preLoginClient;
-    private State state = State.SIGNED_OUT;
-    private String authToken = null;
+    private final GameplayClient gameplayClient;
 
-    public static final String LOGOUT_MESSAGE = "logged out";
+    private State state = State.SIGNED_OUT;
+
+    private Integer gameID = null;
+    private String authToken = null;
+    private ChessGame.TeamColor playerColor;
+    private ServerFacade server;
+    private WebSocketFacade ws;
+
 
     public Repl(String serverUrl) {
-        postLoginClient = new PostLoginClient(serverUrl);
-        preLoginClient = new PreLoginClient(serverUrl);
+        this.server = new ServerFacade(serverUrl);
+
+        preLoginClient = new PreLoginClient(this);
+        postLoginClient = new PostLoginClient(this);
+        gameplayClient = new GameplayClient(this);
     }
 
-    private void setState(String result) {
-        if (Objects.equals(result, LOGOUT_MESSAGE)) {
-            state = State.SIGNED_OUT;
-        }
+    public void setState(State state) {
+        this.state = state;
     }
 
-    private void handleAuthToken(String authToken) {
-        if (authToken != null) {
-            postLoginClient.setAuthToken(authToken);
-            state = State.SIGNED_IN;
-        }
-    }
 
     public void run() {
         System.out.println(SET_BG_COLOR_DARK_GREY + SET_TEXT_COLOR_WHITE + "Welcome to the chess client! Type \"help\" for a list of commands.");
-        System.out.print(preLoginClient.help().value());
+        System.out.print(preLoginClient.help());
 
         Scanner scanner = new Scanner(System.in);
         String result = "";
@@ -50,20 +57,13 @@ public class Repl {
 
             try {
                 switch (state) {
+                    case SIGNED_OUT -> {
+                        result = preLoginClient.eval(line);
+                        System.out.print(SET_TEXT_COLOR_BLUE + result);
+                        }
                     case SIGNED_IN -> {
                         result = postLoginClient.eval(line);
                         System.out.print(SET_TEXT_COLOR_BLUE + result);
-
-
-                        setState(result);
-                    }
-                    case SIGNED_OUT -> {
-                        PreLoginClient.ReturnValue returnValue = preLoginClient.eval(line);
-                        result = returnValue.value();
-                        String authToken = returnValue.authToken();
-
-                        System.out.print(SET_TEXT_COLOR_BLUE + result);
-                        handleAuthToken(authToken);
                     }
                     case IN_GAME -> {
                         System.out.print("Not yet implemented");
@@ -92,4 +92,35 @@ public class Repl {
 
     }
 
+    public Integer getGameID() {
+        return gameID;
+    }
+
+    public void setGameID(Integer gameID) {
+        this.gameID = gameID;
+    }
+
+    public String getAuthToken() {
+        return authToken;
+    }
+
+    public void setAuthToken(String authToken) {
+        this.authToken = authToken;
+    }
+
+    public WebSocketFacade getWs() {
+        return ws;
+    }
+
+    public void setWs(WebSocketFacade ws) {
+        this.ws = ws;
+    }
+
+    public ServerFacade getServer() {
+        return server;
+    }
+
+    public void setPlayerColor(ChessGame.TeamColor playerColor) {
+        this.playerColor = playerColor;
+    }
 }

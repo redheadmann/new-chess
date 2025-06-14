@@ -1,5 +1,6 @@
 package client;
 
+import chess.ChessGame;
 import sharedexception.ResponseException;
 import org.junit.jupiter.api.*;
 import passoff.model.*;
@@ -238,7 +239,7 @@ public class ServerFacadeTests {
 
         //join as white
         try {
-            serverFacade.joinGame(existingAuth, "WHITE",
+            serverFacade.joinGame(existingAuth, ChessGame.TeamColor.WHITE,
                     createResult.gameID());
         } catch (ResponseException e) {
             Assertions.assertTrue(Boolean.FALSE, "Failed to join game");
@@ -267,27 +268,11 @@ public class ServerFacadeTests {
         GameRecords.CreateResult createResult = createGame(null);
 
         Assertions.assertThrows(ResponseException.class, ()-> {
-            serverFacade.joinGame(existingAuth + "bad stuff", "WHITE",
+            serverFacade.joinGame(existingAuth + "bad stuff", ChessGame.TeamColor.WHITE,
                     createResult.gameID());
         }, "Game created with bad authentication");
     }
 
-
-    @Test
-    @Order(11)
-    @DisplayName("Join Bad Team Color")
-    public void joinGameBadColor() {
-        // Create game
-        GameRecords.CreateResult createResult = createGame(null);
-        int gameID = createResult.gameID();
-
-        // Try bad colors
-        for(String color : new String[]{null, "", "GREEN"}) {
-            Assertions.assertThrows(ResponseException.class, () -> {
-                serverFacade.joinGame(existingAuth, color, gameID);
-            });
-        }
-    }
 
 
     @Test
@@ -334,30 +319,30 @@ public class ServerFacadeTests {
             //1 as black from A
             String game1Name = "I'm numbah one!";
             GameRecords.CreateResult game1 = serverFacade.createGame(authA, game1Name);
-            serverFacade.joinGame(authA, "BLACK", game1.gameID());
+            serverFacade.joinGame(authA, ChessGame.TeamColor.BLACK, game1.gameID());
             expectedList.add(new GameRecords.ReducedGameData(game1.gameID(),
                     null, "a", game1Name));
 
             //1 as white from B
             String game2Name = "Lonely";
             GameRecords.CreateResult game2 = serverFacade.createGame(authB, game2Name);
-            serverFacade.joinGame(authB, "WHITE", game2.gameID());
+            serverFacade.joinGame(authB, ChessGame.TeamColor.WHITE, game2.gameID());
             expectedList.add(new GameRecords.ReducedGameData(game2.gameID(),
                     "b", null, game2Name));
 
             //1 of each from C
             String game3Name = "GG";
             GameRecords.CreateResult game3 = serverFacade.createGame(authC, game3Name);
-            serverFacade.joinGame(authC, "WHITE", game3.gameID());
-            serverFacade.joinGame(authA, "BLACK", game3.gameID());
+            serverFacade.joinGame(authC, ChessGame.TeamColor.WHITE, game3.gameID());
+            serverFacade.joinGame(authA, ChessGame.TeamColor.BLACK, game3.gameID());
             expectedList.add(new GameRecords.ReducedGameData(game3.gameID(),
                     "c", "a", game3Name));
 
             //C play self
             String game4Name = "All by myself";
             GameRecords.CreateResult game4 = serverFacade.createGame(authC, game4Name);
-            serverFacade.joinGame(authC, "WHITE", game4.gameID());
-            serverFacade.joinGame(authC, "BLACK", game4.gameID());
+            serverFacade.joinGame(authC, ChessGame.TeamColor.WHITE, game4.gameID());
+            serverFacade.joinGame(authC, ChessGame.TeamColor.BLACK, game4.gameID());
             expectedList.add(new GameRecords.ReducedGameData(game4.gameID(),
                     "c", "c", game4Name));
         } catch (ResponseException e) {

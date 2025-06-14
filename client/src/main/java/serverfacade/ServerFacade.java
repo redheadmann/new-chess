@@ -1,5 +1,6 @@
 package serverfacade;
 
+import chess.ChessGame;
 import com.google.gson.Gson;
 import sharedexception.ResponseException;
 import records.GameRecords;
@@ -16,6 +17,9 @@ public class ServerFacade {
         serverUrl = url;
     }
 
+    public String getUrl() {
+        return serverUrl;
+    }
 
     public void clear() throws ResponseException {
         var path = "/db";
@@ -72,8 +76,9 @@ public class ServerFacade {
     }
 
 
-    public void joinGame(String authToken, String playerColor, int gameID) throws ResponseException {
-        GameRecords.JoinRequest request = new GameRecords.JoinRequest(playerColor, gameID);
+    public void joinGame(String authToken, ChessGame.TeamColor playerColor, int gameID) throws ResponseException {
+        String color = playerColor == ChessGame.TeamColor.WHITE ? "WHITE" : "BLACK";
+        GameRecords.JoinRequest request = new GameRecords.JoinRequest(color, gameID);
 
         var path = "/game";
         GameRecords.JoinResult result = this.makeRequest("PUT", path,

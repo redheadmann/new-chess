@@ -14,10 +14,10 @@ import java.net.URISyntaxException;
 public class WebSocketFacade extends Endpoint {
 
     Session session;
-    GameplayClient notificationHandler;
+    ServerMessageObserver notificationHandler;
 
 
-    public WebSocketFacade(String url, GameplayClient repl) throws ResponseException {
+    public WebSocketFacade(String url, ServerMessageObserver observer) throws ResponseException {
         try {
             // Create new url with ws extension
             url = url.replace("http", "ws");
@@ -29,7 +29,7 @@ public class WebSocketFacade extends Endpoint {
             this.session = container.connectToServer(this, socketURI);
 
             //set message handler
-            this.session.addMessageHandler(new NotificationMessageHandler(repl));
+            this.session.addMessageHandler(new NotificationMessageHandler(observer));
         } catch (DeploymentException | IOException | URISyntaxException ex) {
             throw new ResponseException(500, ex.getMessage());
         }

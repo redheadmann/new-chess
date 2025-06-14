@@ -4,37 +4,32 @@ import chess.ChessBoard;
 import chess.ChessGame;
 import chess.ChessPiece;
 import chess.ChessPosition;
+import repl.Repl;
+import repl.State;
+import serverfacade.websocket.ServerMessageObserver;
+import serverfacade.websocket.WebSocketFacade;
 import sharedexception.ResponseException;
 import serverfacade.ServerFacade;
 import records.GameRecords;
+import websocket.messages.ServerMessage;
 
 import java.util.Arrays;
 import java.util.HashMap;
 
 import static ui.EscapeSequences.*;
-import static repl.Repl.LOGOUT_MESSAGE;
 
-public class PostLoginClient implements Client {
-
-    // These determine what game a user is accessing
+public class PostLoginClient implements Client, ServerMessageObserver {
+    // This determines what game a user is accessing
     private HashMap<Integer, Integer> gameMap = new HashMap<>();
 
     private final ServerFacade server;
     private String authToken = null;
+    private final Repl repl;
 
-
-    HashMap<ChessPiece.PieceType, String> whiteMap = new HashMap<>();
-    HashMap<ChessPiece.PieceType, String> blackMap = new HashMap<>();
-
-
-    public PostLoginClient(String serverUrl) {
-        server = new ServerFacade(serverUrl);
-
-        createPieceMap(whiteMap, blackMap);
-    }
-
-    public void setAuthToken(String authToken) {
-        this.authToken = authToken;
+    public PostLoginClient(Repl repl) {
+        server = repl.getServer();
+        authToken = repl.getAuthToken();
+        this.repl = repl;
     }
 
     public String eval(String input) {
@@ -100,124 +95,6 @@ public class PostLoginClient implements Client {
 
     }
 
-    private enum Color {
-        WHITE,
-        BLACK
-    }
-
-
-    private Color updateColor(Color color) {
-        return color == Color.WHITE ? Color.BLACK : Color.WHITE;
-    }
-
-    private void setDarkSquare(StringBuilder str) {
-        str.append(SET_BG_COLOR_DARK_GREEN);
-    }
-
-    private void setLightSquare(StringBuilder str) {
-        str.append(SET_BG_COLOR_WHITE);
-    }
-
-    private void drawPieceOrNull(StringBuilder str, ChessBoard board, int row, int col) {
-        ChessPiece piece = board.getPiece(new ChessPosition(row, col));
-        if (piece == null) {
-            str.append(EMPTY);
-        } else {
-            if (piece.getTeamColor() == ChessGame.TeamColor.WHITE) {
-                str.append(whiteMap.get(piece.getPieceType()));
-            } else {
-                str.append(blackMap.get(piece.getPieceType()));
-            }
-        }
-    }
-
-    private String drawRow(ChessBoard board, Integer row, Integer direction, Color leftColor) {
-        // 0 for white perspective, 1 for black
-        StringBuilder str = new StringBuilder();
-
-        // Label
-        str.append(String.format(" %d ", row));
-
-        // Switch the color each iteration
-        Color color = Color.WHITE;
-        if (direction == 0 && leftColor == Color.BLACK) {
-            color = Color.BLACK;
-        } else if (direction == 1 && leftColor == Color.WHITE) {
-            color = Color.BLACK;
-        }
-
-        // Go through row
-        if (direction == 0) {
-            for (int col = 1; col <= 8; col++) {
-                if (color == Color.WHITE) {
-                    setLightSquare(str);
-                } else {
-                    setDarkSquare(str);
-                }
-                drawPieceOrNull(str, board, row, col);
-                color = updateColor(color);
-            }
-        } else {
-            for (int col = 8; col >= 1; col--) {
-                if (color == Color.WHITE) {
-                    setLightSquare(str);
-                } else {
-                    setDarkSquare(str);
-                }
-                drawPieceOrNull(str, board, row, col);
-                color = updateColor(color);
-            }
-
-        }
-        str.append(SET_BG_COLOR_LIGHT_GREY + SET_TEXT_COLOR_BLACK).append(String.format(" %d ", row));
-
-        return str.toString();
-    }
-
-    private String drawBoard(ChessBoard board, Integer direction) {
-        StringBuilder str = new StringBuilder();
-
-        // 0 for white perspective, 1 for black
-        if (direction == 0) {
-            str.append(WHITE_HEADER);
-            for (int row = 8; row >= 1; row--) {
-                // Even rows have white on far left
-                if (row % 2 == 0) {
-                    str.append(drawRow(board, row, 0, Color.WHITE));
-                } else {
-                    str.append(drawRow(board, row, 0, Color.BLACK));
-                }
-                str.append("\n");
-            }
-            str.append(WHITE_HEADER);
-        } else {
-            str.append(BLACK_HEADER);
-            for (int row = 1; row <= 8; row++) {
-                // Even rows have white on far left
-                if (row % 2 == 0) {
-                    str.append(drawRow(board, row, 1, Color.WHITE));
-                } else {
-                    str.append(drawRow(board, row, 1, Color.BLACK));
-                }
-                str.append("\n");
-            }
-            str.append(BLACK_HEADER);
-        }
-
-        return str.toString();
-    }
-
-    private String drawStartingBoard(Color color) {
-        // use a board object
-        ChessBoard board = new ChessBoard();
-        board.resetBoard();
-
-        if (color == Color.WHITE) {
-            return drawBoard(board, 0);
-        } else {
-            return drawBoard(board, 1);
-        }
-    }
 
     public String joinGame(String... params) throws ResponseException{
         if (params.length == 2) {
@@ -228,16 +105,26 @@ public class PostLoginClient implements Client {
                 if (!color.equals("WHITE") && !color.equals("BLACK")) {
                     throw new ResponseException(400, "Expected: join <ID> [WHITE|BLACK]");
                 }
-                Color safeColor = color.equals("WHITE") ? Color.WHITE : Color.BLACK;
+                ChessGame.TeamColor playerColor = color.equals("WHITE") ?
+                        ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK;
 
+                // Make sure gameID is not null and join the game
                 Integer gameID = gameMap.get(gameNum);
                 if (gameID == null) {
                     throw new ResponseException(400, "Invalid ID");
                 }
                 server.joinGame(authToken, color, gameID);
 
+                // Send connect command via websocket
+                WebSocketFacade ws = new WebSocketFacade(server.getUrl(), repl);
+                repl.setWs(ws);
+                // TODO:: send the command, which will automatically draw the board
+                // upon receiving a notification in return
 
-                return drawStartingBoard(safeColor);
+                // Update repl state and gameID
+                repl.setState(State.IN_GAME);
+                repl.setGameID(gameID);
+                return null;
             } catch (NumberFormatException ignored) {
             }
         }
@@ -258,7 +145,7 @@ public class PostLoginClient implements Client {
 
                 // I do not yet have an observe function
 
-                return drawStartingBoard(Color.WHITE);
+                return drawBoard(Color.WHITE);
             } catch (NumberFormatException ignored) {
             }
         }
@@ -272,7 +159,9 @@ public class PostLoginClient implements Client {
             try {
                 server.logoutUser(authToken);
 
-                return LOGOUT_MESSAGE;
+                // update repl state and delete authToken from repl
+                repl.setState(State.SIGNED_OUT);
+                repl.setAuthToken(null);
             } catch (NumberFormatException ignored) {
             }
         }
@@ -294,5 +183,10 @@ public class PostLoginClient implements Client {
                 SET_TEXT_COLOR_WHITE + " - when you are done\n" +
                 SET_TEXT_COLOR_BLUE + "help" +
                 SET_TEXT_COLOR_WHITE + " - with possible commands\n";
+    }
+
+    @Override
+    public void notify(ServerMessage message) {
+        repl.notify(message);
     }
 }

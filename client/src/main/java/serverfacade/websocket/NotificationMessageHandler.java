@@ -9,20 +9,20 @@ import websocket.messages.ServerMessage;
 import javax.websocket.MessageHandler;
 
 public class NotificationMessageHandler implements MessageHandler.Whole<String> {
-    private final GameplayClient client;
+    private final ServerMessageObserver observer;
     private final Gson serializer = MessageDeserializer.createSerializer();
 
-    public NotificationMessageHandler(GameplayClient client) {
-        this.client = client;
+    public NotificationMessageHandler(ServerMessageObserver observer) {
+        this.observer = observer;
     }
 
     @Override
     public void onMessage(String message) {
         try {
             ServerMessage serverMessage = serializer.fromJson(message, ServerMessage.class);
-            client.notify(serverMessage);
+            observer.notify(serverMessage);
         } catch (Exception ex) {
-            client.notify(new ErrorMessage(ex.getMessage()));
+            observer.notify(new ErrorMessage(ex.getMessage()));
         }
     }
 }
